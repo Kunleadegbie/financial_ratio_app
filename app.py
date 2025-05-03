@@ -4,6 +4,71 @@ import os
 from datetime import datetime
 from io import BytesIO
 
+# Load user access CSV
+USERS_CSV = "data/users.csv"
+
+if not os.path.exists(USERS_CSV):
+    df = pd.DataFrame(columns=["name", "email", "status", "trial_used"])
+    df.to_csv(USERS_CSV, index=False)
+
+users_df = pd.read_csv(USERS_CSV)
+
+# User login inputs
+st.sidebar.title("Login")
+user_name = st.sidebar.text_input("Enter your Name and Surname")
+user_email = st.sidebar.text_input("Enter your Email")
+login_button = st.sidebar.button("Login")
+
+def save_users_df(df):
+    df.to_csv(USERS_CSV, index=False)
+
+# Session state for login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+if login_button:
+    if user_name and user_email:
+        # Check if user exists
+        user_record = users_df[users_df['email'] == user_email]
+
+        if user_record.empty:
+            # New user — add with pending status and trial_used no
+            new_user = pd.DataFrame([[user_name, user_email, "pending", "no"]], columns=["name", "email", "status", "trial_used"])
+            users_df = pd.concat([users_df, new_user], ignore_index=True)
+            save_users_df(users_df)
+            st.success("Free trial granted. Enjoy your one-time access!")
+            st.session_state.logged_in = True
+            users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
+            save_users_df(users_df)
+
+        else:
+            status = user_record.iloc[0]['status']
+            trial_used = user_record.iloc[0]['trial_used']
+
+            if status == "authorized":
+                st.success("Welcome back, authorized user!")
+                st.session_state.logged_in = True
+
+            elif trial_used == "no":
+                st.success("Free trial granted. Enjoy your one-time access!")
+                st.session_state.logged_in = True
+                users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
+                save_users_df(users_df)
+
+            else:
+                st.error("Access denied. Please contact admin for authorization.")
+
+    else:
+        st.warning("Please enter both Name and Email.")
+
+# If not logged in, stop the app
+if not st.session_state.logged_in:
+    st.stop()
+
+else:
+    st.title("📊 Financial Ratio Analysis App")
+    st.write(f"Hello **{user_name}** — your email: {user_email}")  
+
 # Create results directory if it doesn't exist
 if not os.path.exists("results"):
     os.makedirs("results")
