@@ -194,7 +194,17 @@ if name and email:
         result_df.to_csv(filename, index=False)
 
         buffer = BytesIO()
-        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+
+with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
     result_df.to_excel(writer, index=False, sheet_name='Results')
+
+buffer.seek(0)
+st.download_button(
+    label="Download Results as Excel",
+    data=buffer,
+    file_name='financial_ratios_results.xlsx',
+    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+)
+
         st.download_button(label="Download CSV", data=result_df.to_csv(index=False), file_name="financial_ratios.csv", mime="text/csv")
         st.download_button(label="Download Excel", data=buffer.getvalue(), file_name="financial_ratios.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
