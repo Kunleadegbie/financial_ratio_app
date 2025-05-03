@@ -35,8 +35,11 @@ if 'logged_in' not in st.session_state:
 if login_button:
     if user_name and user_email:
         user_record = users_df[users_df['email'] == user_email]
-
+        
+        # Check if user_record is empty
         if user_record.empty:
+            st.write("No matching user found.")
+            st.write(user_record)  # This will display an empty DataFrame or show any relevant info
             new_user = pd.DataFrame([[user_name, user_email, "pending", "no", "no"]], columns=["name", "email", "status", "trial_used", "approved"])
             users_df = pd.concat([users_df, new_user], ignore_index=True)
             save_users_df(users_df)
@@ -45,7 +48,9 @@ if login_button:
             users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
             save_users_df(users_df)
         else:
-            # Ensure the user_record is not empty
+            st.write("User record found:")
+            st.write(user_record)  # This will show the user record for debugging
+            
             status = user_record.iloc[0]['status']
             trial_used = user_record.iloc[0]['trial_used']
             approved = user_record.iloc[0]['approved']
