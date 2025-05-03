@@ -51,7 +51,8 @@ if login_button:
                 users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
                 save_users_df(users_df)
             else:
-                st.error("Access denied. Please contact admin for authorization.")
+                st.success("Welcome back!")
+                st.session_state.logged_in = True
     else:
         st.warning("Please enter both Name and Email.")
 
@@ -74,12 +75,12 @@ else:
             padding-top: 2rem;
         }
         .stButton>button {
-            background-color: #1a73e8;
+            background-color: #4CAF50;
             color: white;
             border-radius: 5px;
         }
         .stButton>button:hover {
-            background-color: #155ab6;
+            background-color: #45a049;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -115,7 +116,33 @@ else:
     average_payable = st.number_input("Average Accounts Payable", min_value=0.0)
     accounts_payable = st.number_input("Accounts Payable", min_value=0.0)
 
+    # Calculation button
+    if st.button("Calculate Ratios"):
+        # Example ratios calculation (these can be modified based on the actual formula you need)
+        liquidity_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
+        profitability_ratio = gross_profit / revenue if revenue != 0 else 0
+        solvency_ratio = total_liabilities / equity if equity != 0 else 0
+        efficiency_ratio = cost_of_goods_sold / average_inventory if average_inventory != 0 else 0
+        
+        # Display the results
+        st.subheader("Calculated Ratios")
+        st.write(f"Liquidity Ratio: {liquidity_ratio:.2f}")
+        st.write(f"Profitability Ratio: {profitability_ratio:.2f}")
+        st.write(f"Solvency Ratio: {solvency_ratio:.2f}")
+        st.write(f"Efficiency Ratio: {efficiency_ratio:.2f}")
 
+        # Prepare data for CSV download
+        results = {
+            "Liquidity Ratio": liquidity_ratio,
+            "Profitability Ratio": profitability_ratio,
+            "Solvency Ratio": solvency_ratio,
+            "Efficiency Ratio": efficiency_ratio
+        }
+        results_df = pd.DataFrame([results])
+
+        # Provide download button
+        csv = results_df.to_csv(index=False)
+        st.download_button("Download Results as CSV", csv, "financial_ratios.csv", "text/csv")
 
     # Create results directory if it doesn't exist
     if not os.path.exists("results"):
