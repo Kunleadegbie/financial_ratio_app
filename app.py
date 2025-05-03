@@ -51,7 +51,8 @@ if login_button:
                 users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
                 save_users_df(users_df)
             else:
-                st.error("Access denied. Please contact admin for authorization.")
+                st.success("Welcome back!")
+                st.session_state.logged_in = True
     else:
         st.warning("Please enter both Name and Email.")
 
@@ -74,12 +75,12 @@ else:
             padding-top: 2rem;
         }
         .stButton>button {
-            background-color: #1a73e8;
+            background-color: #4CAF50;
             color: white;
             border-radius: 5px;
         }
         .stButton>button:hover {
-            background-color: #155ab6;
+            background-color: #45a049;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -115,52 +116,72 @@ else:
     average_payable = st.number_input("Average Accounts Payable", min_value=0.0)
     accounts_payable = st.number_input("Accounts Payable", min_value=0.0)
 
-    # Calculating financial ratios
-    current_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
-    quick_ratio = (current_assets - inventory) / current_liabilities if current_liabilities != 0 else 0
-    cash_ratio = cash / current_liabilities if current_liabilities != 0 else 0
+    # Calculation button
+    if st.button("Calculate Ratios"):
+        # Example ratios calculation
+        liquidity_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
+        profitability_ratio = gross_profit / revenue if revenue != 0 else 0
+        solvency_ratio = total_liabilities / equity if equity != 0 else 0
+        efficiency_ratio = cost_of_goods_sold / average_inventory if average_inventory != 0 else 0
 
-    # Analyzing the results
-    results = {
-        "Ratio": ["Current Ratio", "Quick Ratio", "Cash Ratio"],
-        "Value": [current_ratio, quick_ratio, cash_ratio],
-        "Analysis": [
-            "Weak" if current_ratio < 1 else "Strong",
-            "Weak" if quick_ratio < 1 else "Strong",
-            "Low" if cash_ratio < 0.5 else "High"
-        ],
-        "Implication": [
-            "Struggle to cover short-term debts" if current_ratio < 1 else "Able to cover short-term debts",
-            "Insufficient liquid assets" if quick_ratio < 1 else "Sufficient liquidity",
-            "Limited immediate liquidity" if cash_ratio < 0.5 else "Strong liquidity position"
-        ],
-        "Advice": [
-            "Increase liquid assets." if current_ratio < 1 else "Maintain current asset levels.",
-            "Increase cash or receivables." if quick_ratio < 1 else "Optimize current asset management.",
-            "Boost cash reserves." if cash_ratio < 0.5 else "Maintain cash reserves."
+        # Display the results
+        st.subheader("Calculated Ratios")
+        st.write(f"Liquidity Ratio: {liquidity_ratio:.2f}")
+        st.write(f"Profitability Ratio: {profitability_ratio:.2f}")
+        st.write(f"Solvency Ratio: {solvency_ratio:.2f}")
+        st.write(f"Efficiency Ratio: {efficiency_ratio:.2f}")
+
+        # Prepare data for CSV download
+        results = {
+            "Liquidity Ratio": liquidity_ratio,
+            "Profitability Ratio": profitability_ratio,
+            "Solvency Ratio": solvency_ratio,
+            "Efficiency Ratio": efficiency_ratio
+        }
+        results_df = pd.DataFrame([results])
+
+        csv = results_df.to_csv(index=False)
+        st.download_button("Download Results as CSV", csv, "financial_ratios.csv", "text/csv")
+
+        # 🚀 Liquidity Ratios Detailed Analysis
+        st.subheader("Liquidity Ratios Detailed Analysis")
+
+        current_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
+        quick_ratio = (current_assets - inventory) / current_liabilities if current_liabilities != 0 else 0
+        cash_ratio = cash / current_liabilities if current_liabilities != 0 else 0
+
+        analysis_data = [
+            {
+                "Ratio": "Current Ratio",
+                "Value": f"{current_ratio:.2f}",
+                "Analysis": "Weak" if current_ratio < 2 else "Healthy",
+                "Implication": "Struggle to cover short-term debts" if current_ratio < 2 else "Can cover short-term obligations",
+                "Advice": "Increase liquid assets." if current_ratio < 2 else "Maintain current liquidity."
+            },
+            {
+                "Ratio": "Quick Ratio",
+                "Value": f"{quick_ratio:.2f}",
+                "Analysis": "Weak" if quick_ratio < 1 else "Healthy",
+                "Implication": "Insufficient liquid assets" if quick_ratio < 1 else "Adequate quick liquidity",
+                "Advice": "Increase cash or receivables." if quick_ratio < 1 else "Good liquidity management."
+            },
+            {
+                "Ratio": "Cash Ratio",
+                "Value": f"{cash_ratio:.2f}",
+                "Analysis": "Low" if cash_ratio < 0.5 else "Adequate",
+                "Implication": "Limited immediate liquidity" if cash_ratio < 0.5 else "Sufficient immediate liquidity",
+                "Advice": "Boost cash reserves." if cash_ratio < 0.5 else "Maintain cash position."
+            }
         ]
-    }
 
-    # Creating a DataFrame for results
-    df_results = pd.DataFrame(results)
+        liquidity_df = pd.DataFrame(analysis_data)
 
-    # Display the results
-    st.write(df_results)
+        st.dataframe(liquidity_df)
 
-    # Creating download option for CSV file
-    def convert_df_to_csv(df):
-        return df.to_csv(index=False).encode('utf-8')
+        # Download button for Liquidity Analysis
+        liquidity_csv = liquidity_df.to_csv(index=False)
+        st.download_button("Download Liquidity Analysis as CSV", liquidity_csv, "liquidity_analysis.csv", "text/csv")
 
-    csv_file = convert_df_to_csv(df_results)
-
-    # Download button
-    st.download_button(
-        label="Download Financial Ratios Report",
-        data=csv_file,
-        file_name=f"financial_ratios_{user_email}_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv",
-        mime="text/csv"
-    )
-    
     # Create results directory if it doesn't exist
     if not os.path.exists("results"):
         os.makedirs("results")
