@@ -1,0 +1,20 @@
+# Ignore results folder contents but keep the folder structure
+/results/*
+!/results/.gitkeep
+
+# Python cache and environment files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+
+# Mac system files
+.DS_Store
+
+# VS Code config files (if using VS Code)
+.vscode/
+
+# Streamlit specific cache
+.streamlit/config.toml
