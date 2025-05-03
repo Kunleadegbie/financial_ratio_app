@@ -45,7 +45,6 @@ if login_button:
             users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
             save_users_df(users_df)
         else:
-            # Extract trial_used and approved status for the logged-in user
             status = user_record.iloc[0]['status']
             trial_used = user_record.iloc[0]['trial_used']
             approved = user_record.iloc[0]['approved']
@@ -137,8 +136,8 @@ else:
     investing_cash_flow = st.number_input("Investing Cash Flow")
     financing_cash_flow = st.number_input("Financing Cash Flow")
 
-    # Disable input if the user has already used their free trial and is not approved by admin
-    if trial_used == "yes" and approved == "no":
+    # Check if the user has used their trial and is not approved
+    if user_record.iloc[0]['trial_used'] == "yes" and user_record.iloc[0]['approved'] == "no":
         st.warning("You cannot use the Financial Ratio Calculator again. Please contact the admin for approval.")
         st.stop()
 
@@ -148,4 +147,5 @@ else:
 
         # Display results
         st.subheader("Calculated Ratios and Cash Flow")
+
         st.write(f"Net Cash Flow: {net_cash_flow:.2f}")
