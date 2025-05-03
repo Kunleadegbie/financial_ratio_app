@@ -66,16 +66,16 @@ if login_button:
 if not st.session_state.logged_in:
      st.stop()
 else:
-    st.title("📊 Financial Ratio Analysis App")
-    st.write(f"Hello **{user_name}** — your email: {user_email}")
+   st.title("📊 Financial Ratio Analysis App")
+   st.write(f"Hello **{user_name}** — your email: {user_email}")
 
-    # Everything under else must be indented one level (4 spaces)
-    st.header("Enter Financial Figures")
-    company = st.text_input("Company Name (optional)")
+   # Everything under else must be indented one level (4 spaces)
+   st.header("Enter Financial Figures")
+   company = st.text_input("Company Name (optional)")
 
-    st.subheader("Liquidity Ratios")
-    current_assets = st.number_input("Current Assets", min_value=0.0)
-    current_liabilities = st.number_input("Current Liabilities", min_value=0.0)
+   st.subheader("Liquidity Ratios")
+   current_assets = st.number_input("Current Assets", min_value=0.0)
+   current_liabilities = st.number_input("Current Liabilities", min_value=0.0)
 
 
 # Create results directory if it doesn't exist
