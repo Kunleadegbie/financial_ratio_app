@@ -1,161 +1,147 @@
 import streamlit as st
 import pandas as pd
-import os
+from io import StringIO
 
-# Load user access CSV
-USERS_CSV = "data/users.csv"
+# User database file (persistent storage for users)
+users_file = 'users.csv'
 
-# Check if the file exists, if not, create it with the necessary columns
-if not os.path.exists(USERS_CSV):
-    df = pd.DataFrame(columns=["name", "email", "status", "trial_used", "approved"])
-    df.to_csv(USERS_CSV, index=False)
+# Check if users file exists, if not, create one
+def check_and_create_users_file():
+    try:
+        users_df = pd.read_csv(users_file)
+    except FileNotFoundError:
+        users_df = pd.DataFrame(columns=["email", "name", "role"])
+        users_df.to_csv(users_file, index=False)
 
-# Load the user data
-users_df = pd.read_csv(USERS_CSV)
+# Function to check if the user is an admin (can modify this logic)
+def is_admin(email):
+    return email == "admin@example.com"
 
-# Ensure 'approved' column exists
-def ensure_columns_exist(users_df):
-    if 'approved' not in users_df.columns:
-        users_df['approved'] = 'no'
+# Function to capture new user
+def capture_user(email, name):
+    user = {"email": email, "name": name, "role": "Admin" if is_admin(email) else "Regular"}
+    users_df = pd.read_csv(users_file)
+    users_df = users_df.append(user, ignore_index=True)
+    users_df.to_csv(users_file, index=False)
 
-# Ensure the column exists
-ensure_columns_exist(users_df)
+# Function to display all users (admin only)
+def display_users():
+    users_df = pd.read_csv(users_file)
+    st.subheader("All Users")
+    st.write(users_df)
 
-# User login inputs
-st.sidebar.title("Login")
-user_name = st.sidebar.text_input("Enter your Name and Surname")
-user_email = st.sidebar.text_input("Enter your Email")
-login_button = st.sidebar.button("Login")
+# Function to calculate financial ratios
+def calculate_financial_ratios():
+    # User input for financial figures
+    current_assets = st.number_input("Enter Current Assets", min_value=0.0)
+    current_liabilities = st.number_input("Enter Current Liabilities", min_value=0.0)
+    cash_and_equivalents = st.number_input("Enter Cash and Cash Equivalents", min_value=0.0)
+    total_debt = st.number_input("Enter Total Debt", min_value=0.0)
+    total_equity = st.number_input("Enter Total Equity", min_value=0.0)
+    gross_profit = st.number_input("Enter Gross Profit", min_value=0.0)
+    total_assets = st.number_input("Enter Total Assets", min_value=0.0)
+    net_income = st.number_input("Enter Net Income", min_value=0.0)
+    earnings_shares = st.number_input("Enter Earnings per Share", min_value=0.0)
+    cash_flow = st.number_input("Enter Net Cash Flow", min_value=0.0)
 
-def save_users_df(df):
-    df.to_csv(USERS_CSV, index=False)
+    # Calculations
+    current_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
+    quick_ratio = (current_assets - cash_and_equivalents) / current_liabilities if current_liabilities != 0 else 0
+    cash_ratio = cash_and_equivalents / current_liabilities if current_liabilities != 0 else 0
+    debt_to_equity = total_debt / total_equity if total_equity != 0 else 0
+    gross_profit_margin = gross_profit / total_assets if total_assets != 0 else 0
+    return_on_assets = net_income / total_assets if total_assets != 0 else 0
+    return_on_equity = net_income / total_equity if total_equity != 0 else 0
+    earnings_per_share = net_income / earnings_shares if earnings_shares != 0 else 0
+    net_cash_flow = cash_flow
 
-# Session state for login
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
+    # Financial ratios and analysis
+    ratios_data = [
+        {"Ratio": "Current Ratio", "Value": f"{current_ratio:.2f}",
+         "Analysis": "Weak" if current_ratio < 1 else "Good", "Implication": "Struggle to cover short-term debts" if current_ratio < 1 else "Healthy short-term liquidity",
+         "Advice": "Increase liquid assets." if current_ratio < 1 else "Maintain current liquidity."},
 
-# Check if the login button was clicked
-if login_button:
-    if user_name and user_email:
-        # Check if the user exists in the dataframe based on email
-        user_record = users_df[users_df['email'] == user_email]
+        {"Ratio": "Quick Ratio", "Value": f"{quick_ratio:.2f}",
+         "Analysis": "Weak" if quick_ratio < 1 else "Good", "Implication": "Insufficient liquid assets" if quick_ratio < 1 else "Sufficient liquid assets",
+         "Advice": "Increase cash or receivables." if quick_ratio < 1 else "Maintain liquid assets."},
 
-        if user_record.empty:
-            # If no record found, create a new user record
-            new_user = pd.DataFrame([[user_name, user_email, "pending", "no", "no"]], columns=["name", "email", "status", "trial_used", "approved"])
-            users_df = pd.concat([users_df, new_user], ignore_index=True)
-            save_users_df(users_df)
-            st.success("Free trial granted. Enjoy your one-time access!")
-            st.session_state.logged_in = True
-            users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
-            save_users_df(users_df)
-        else:
-            # If user exists, check trial and approval status
-            status = user_record.iloc[0]['status']
-            trial_used = user_record.iloc[0]['trial_used']
-            approved = user_record.iloc[0]['approved']
+        {"Ratio": "Cash Ratio", "Value": f"{cash_ratio:.2f}",
+         "Analysis": "Low" if cash_ratio < 0.5 else "Good", "Implication": "Limited immediate liquidity" if cash_ratio < 0.5 else "Strong immediate liquidity",
+         "Advice": "Boost cash reserves." if cash_ratio < 0.5 else "Maintain strong liquidity."},
 
-            if trial_used == "no":
-                st.success("Free trial granted. Enjoy your one-time access!")
-                st.session_state.logged_in = True
-                users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
-                save_users_df(users_df)
-            elif trial_used == "yes" and approved == "no":
-                st.warning("You have already used your free trial. Please contact the admin for approval.")
-                st.session_state.logged_in = False
-            else:
-                st.success("Welcome back! You have already used your free trial.")
-                st.session_state.logged_in = True
-    else:
-        st.warning("Please enter both Name and Email.")
+        {"Ratio": "Debt-to-Equity", "Value": f"{debt_to_equity:.2f}",
+         "Analysis": "Healthy" if debt_to_equity < 1 else "High", "Implication": "Balanced capital structure" if debt_to_equity < 1 else "High leverage",
+         "Advice": "Maintain leverage." if debt_to_equity < 1 else "Consider reducing debt."},
 
-# Admin Section (Visible to admin only)
-if user_email == "kadegbie@gmail.com":
-    st.subheader("Admin Section")
-    st.write("This section is for admin use only.")
+        {"Ratio": "Gross Profit Margin", "Value": f"{gross_profit_margin:.2f}",
+         "Analysis": "Good" if gross_profit_margin > 0.4 else "Weak", "Implication": "Healthy profit margin" if gross_profit_margin > 0.4 else "Low margin",
+         "Advice": "Maintain margins." if gross_profit_margin > 0.4 else "Improve profit margins."},
 
-    # Show list of graded-out emails for admin to approve
-    graded_out_users = users_df[users_df['trial_used'] == 'yes']
-    graded_out_users = graded_out_users[graded_out_users['approved'] == 'no']
+        {"Ratio": "Return on Assets (ROA)", "Value": f"{return_on_assets:.2f}",
+         "Analysis": "Good" if return_on_assets > 0.1 else "Weak", "Implication": "Efficient asset utilization" if return_on_assets > 0.1 else "Low efficiency",
+         "Advice": "Maintain efficiency." if return_on_assets > 0.1 else "Improve asset utilization."},
+
+        {"Ratio": "Return on Equity (ROE)", "Value": f"{return_on_equity:.2f}",
+         "Analysis": "Strong" if return_on_equity > 0.2 else "Weak", "Implication": "Good shareholder returns" if return_on_equity > 0.2 else "Low returns",
+         "Advice": "Maintain profitability." if return_on_equity > 0.2 else "Focus on profitability."},
+
+        {"Ratio": "Earnings Per Share (EPS)", "Value": f"{earnings_per_share:.2f}",
+         "Analysis": "Low" if earnings_per_share < 1 else "Good", "Implication": "Low profitability per share" if earnings_per_share < 1 else "Healthy earnings per share",
+         "Advice": "Grow net income or reduce share dilution." if earnings_per_share < 1 else "Maintain or improve EPS."},
+
+        {"Ratio": "Net Cash Flow", "Value": f"{net_cash_flow:.2f}",
+         "Analysis": "Negative" if net_cash_flow < 0 else "Positive", "Implication": "Potential liquidity issues" if net_cash_flow < 0 else "Strong cash generation",
+         "Advice": "Consider cost reduction or increasing revenue." if net_cash_flow < 0 else "Maintain or improve positive cash flow."}
+    ]
+
+    # Convert to DataFrame for CSV download
+    df = pd.DataFrame(ratios_data)
+
+    # Convert DataFrame to CSV
+    csv = df.to_csv(index=False)
+
+    # Create a downloadable link for CSV
+    st.download_button(
+        label="Download Financial Ratios CSV",
+        data=csv,
+        file_name="financial_ratios.csv",
+        mime="text/csv"
+    )
+
+    # Display ratios and analysis on the app
+    for ratio in ratios_data:
+        st.write(f"**{ratio['Ratio']}**: {ratio['Value']}")
+        st.write(f"**Analysis**: {ratio['Analysis']}")
+        st.write(f"**Implication**: {ratio['Implication']}")
+        st.write(f"**Advice**: {ratio['Advice']}")
+        st.markdown("---")
+
+# Streamlit app
+if __name__ == "__main__":
+    st.title("Financial Ratio Calculator")
+    st.sidebar.header("Enter Your Details")
     
-    if not graded_out_users.empty:
-        st.write("Emails that need approval:")
-        st.dataframe(graded_out_users[['name', 'email']])
+    # Initialize the user file if it doesn't exist
+    check_and_create_users_file()
 
-        approved_email = st.text_input("Enter email to approve")
-        if st.button("Approve Email"):
-            if approved_email in graded_out_users['email'].values:
-                users_df.loc[users_df['email'] == approved_email, 'approved'] = 'yes'
-                save_users_df(users_df)
-                st.success(f"Email {approved_email} has been approved!")
-            else:
-                st.warning("This email is not in the graded-out list.")
-    else:
-        st.write("No emails pending approval.")
+    # User login
+    st.sidebar.subheader("Login")
+    user_name = st.sidebar.text_input("Name")
+    user_email = st.sidebar.text_input("Email")
 
-# If not logged in, stop execution
-if not st.session_state.logged_in:
-    st.stop()
+    if st.sidebar.button("Login"):
+        if user_name and user_email:
+            # Capture the user data
+            capture_user(user_email, user_name)
 
-else:
-    # MAIN APP AFTER LOGIN
-    st.title("📊 Financial Ratio Analysis App")
-    st.write(f"Hello **{user_name}** — your email: {user_email}")
+            # Greet user
+            st.sidebar.success(f"Welcome {user_name}!")
 
-    st.title("CHUMCRED ACADEMY Financial Ratio Calculator")
-    st.header("Enter Financial Figures")
-    company = st.text_input("Company Name (optional)")
+            # If user is an admin, allow viewing of all users
+            if is_admin(user_email):
+                display_users()
 
-    # Financial Ratios Inputs
-    st.subheader("Liquidity Ratios")
-    current_assets = st.number_input("Current Assets", min_value=0.0)
-    current_liabilities = st.number_input("Current Liabilities", min_value=0.0)
-    inventory = st.number_input("Inventory", min_value=0.0)
-    cash = st.number_input("Cash & Cash Equivalents", min_value=0.0)
-
-    st.subheader("Profitability Ratios")
-    gross_profit = st.number_input("Gross Profit", min_value=0.0)
-    net_income = st.number_input("Net Income", min_value=0.0)
-    revenue = st.number_input("Revenue", min_value=0.0)
-    total_assets = st.number_input("Total Assets", min_value=0.0)
-    equity = st.number_input("Equity", min_value=0.0)
-    operating_profit = st.number_input("Operating Profit", min_value=0.0)
-
-    st.subheader("Solvency Ratios")
-    total_liabilities = st.number_input("Total Liabilities", min_value=0.0)
-    interest_expense = st.number_input("Interest Expense", min_value=0.0)
-
-    st.subheader("Efficiency Ratios")
-    cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0)
-    average_inventory = st.number_input("Average Inventory", min_value=0.0)
-    accounts_receivable = st.number_input("Accounts Receivable", min_value=0.0)
-    average_receivable = st.number_input("Average Accounts Receivable", min_value=0.0)
-    average_payable = st.number_input("Average Accounts Payable", min_value=0.0)
-    accounts_payable = st.number_input("Accounts Payable", min_value=0.0)
-
-    st.subheader("Per Share Data")
-    number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0)
-
-    # Cash Flow Inputs
-    st.subheader("Cash Flow Statement")
-    operating_cash_flow = st.number_input("Operating Cash Flow")
-    investing_cash_flow = st.number_input("Investing Cash Flow")
-    financing_cash_flow = st.number_input("Financing Cash Flow")
-
-    # Check if the user has used their trial and is not approved
-    user_record = users_df[users_df['email'] == user_email]  # Get the user's record again
-    if user_record.empty:
-        st.warning("User record not found.")
-        st.stop()
-
-    if user_record.iloc[0]['trial_used'] == "yes" and user_record.iloc[0]['approved'] == "no":
-        st.warning("You cannot use the Financial Ratio Calculator again. Please contact the admin for approval.")
-        st.stop()
-
-    if st.button("Calculate Ratios and Cash Flow"):
-        # Ratios and Cash Flow Calculations
-        net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
-
-        # Display results
-        st.subheader("Calculated Ratios and Cash Flow")
-        st.write(f"Net Cash Flow: {net_cash_flow:.2f}")
+            # Proceed with the financial ratio calculation
+            calculate_financial_ratios()
+        else:
+            st.sidebar.error("Please enter both name and email to log in.")
