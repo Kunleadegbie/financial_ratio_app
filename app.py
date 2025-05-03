@@ -115,75 +115,74 @@ else:
     average_payable = st.number_input("Average Accounts Payable", min_value=0.0)
     accounts_payable = st.number_input("Accounts Payable", min_value=0.0)
 
-for ratio, value in ratios.items():
-            if "Margin" in ratio or "%" in ratio:
-                if value >= 20:
-                    analysis = "Strong"
-                    implication = "Healthy profitability"
-                    advice = "Maintain operational efficiency."
-                elif 10 <= value < 20:
-                    analysis = "Average"
-                    implication = "Manageable but could improve"
-                    advice = "Review pricing and cost controls."
-                else:
-                    analysis = "Weak"
-                    implication = "Profitability risk"
-                    advice = "Optimize revenue or reduce costs."
+    for ratio, value in ratios.items():
+        if "Margin" in ratio or "%" in ratio:
+            if value >= 20:
+                analysis = "Strong"
+                implication = "Healthy profitability"
+                advice = "Maintain operational efficiency."
+            elif 10 <= value < 20:
+                analysis = "Average"
+                implication = "Manageable but could improve"
+                advice = "Review pricing and cost controls."
             else:
-                if ratio == "Current Ratio":
-                    if value >= 2:
-                        analysis = "Strong"
-                        implication = "Good short-term liquidity"
-                        advice = "Maintain balance."
-                    elif 1 <= value < 2:
-                        analysis = "Weak"
-                        implication = "Struggle to cover short-term debts"
-                        advice = "Increase liquid assets."
-                    else:
-                        analysis = "Low"
-                        implication = "High liquidity risk"
-                        advice = "Improve working capital."
-                elif ratio == "Quick Ratio":
-                    if value >= 1:
-                        analysis = "Strong"
-                        implication = "Adequate liquid assets"
-                        advice = "Stable financial position."
-                    elif 0.5 <= value < 1:
-                        analysis = "Weak"
-                        implication = "Insufficient liquid assets"
-                        advice = "Increase cash or receivables."
-                    else:
-                        analysis = "Low"
-                        implication = "Liquidity concerns"
-                        advice = "Boost quick assets."
-                elif ratio == "Cash Ratio":
-                    if value >= 1:
-                        analysis = "Strong"
-                        implication = "Immediate liquidity available"
-                        advice = "Maintain cash reserves."
-                    elif 0.5 <= value < 1:
-                        analysis = "Weak"
-                        implication = "Moderate liquidity"
-                        advice = "Enhance cash position."
-                    else:
-                        analysis = "Low"
-                        implication = "Limited immediate liquidity"
-                        advice = "Boost cash reserves."
+                analysis = "Weak"
+                implication = "Profitability risk"
+                advice = "Optimize revenue or reduce costs."
+        else:
+            if ratio == "Current Ratio":
+                if value >= 2:
+                    analysis = "Strong"
+                    implication = "Good short-term liquidity"
+                    advice = "Maintain balance."
+                elif 1 <= value < 2:
+                    analysis = "Weak"
+                    implication = "Struggle to cover short-term debts"
+                    advice = "Increase liquid assets."
                 else:
-                    analysis = "-"
-                    implication = "-"
-                    advice = "-"
+                    analysis = "Low"
+                    implication = "High liquidity risk"
+                    advice = "Improve working capital."
+            elif ratio == "Quick Ratio":
+                if value >= 1:
+                    analysis = "Strong"
+                    implication = "Adequate liquid assets"
+                    advice = "Stable financial position."
+                elif 0.5 <= value < 1:
+                    analysis = "Weak"
+                    implication = "Insufficient liquid assets"
+                    advice = "Increase cash or receivables."
+                else:
+                    analysis = "Low"
+                    implication = "Liquidity concerns"
+                    advice = "Boost quick assets."
+            elif ratio == "Cash Ratio":
+                if value >= 1:
+                    analysis = "Strong"
+                    implication = "Immediate liquidity available"
+                    advice = "Maintain cash reserves."
+                elif 0.5 <= value < 1:
+                    analysis = "Weak"
+                    implication = "Moderate liquidity"
+                    advice = "Enhance cash position."
+                else:
+                    analysis = "Low"
+                    implication = "Limited immediate liquidity"
+                    advice = "Boost cash reserves."
+            else:
+                analysis = "-"
+                implication = "-"
+                advice = "-"
 
-            results.append([ratio, round(value, 2), analysis, implication, advice])
+        results.append([ratio, round(value, 2), analysis, implication, advice])
 
-        result_df = pd.DataFrame(results, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
+    result_df = pd.DataFrame(results, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
 
-        st.dataframe(result_df)
+    st.dataframe(result_df)
 
-        # Download CSV
-        st.download_button(label="Download CSV", data=result_df.to_csv(index=False), file_name="financial_ratios.csv", mime="text/csv")
+    # Download CSV
+    st.download_button(label="Download CSV", data=result_df.to_csv(index=False), file_name="financial_ratios.csv", mime="text/csv")
 
     # Create results directory if it doesn't exist
     if not os.path.exists("results"):
         os.makedirs("results")
-
