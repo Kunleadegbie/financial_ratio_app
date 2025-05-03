@@ -112,9 +112,9 @@ else:
 
     # Cash Flow Inputs
     st.subheader("Cash Flow Statement")
-    operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0)
-    investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0)
-    financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0)
+    operating_cash_flow = st.number_input("Operating Cash Flow")
+    investing_cash_flow = st.number_input("Investing Cash Flow")
+    financing_cash_flow = st.number_input("Financing Cash Flow")
 
     if st.button("Calculate Ratios and Cash Flow"):
         # Liquidity Ratios
