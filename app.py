@@ -78,6 +78,7 @@ else:
     st.header("Enter Financial Figures")
     company = st.text_input("Company Name (optional)")
 
+    # Financial Ratios Inputs
     st.subheader("Liquidity Ratios")
     current_assets = st.number_input("Current Assets", min_value=0.0)
     current_liabilities = st.number_input("Current Liabilities", min_value=0.0)
@@ -107,7 +108,13 @@ else:
     st.subheader("Per Share Data")
     number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0)
 
-    if st.button("Calculate Ratios"):
+    # Cash Flow Inputs
+    st.subheader("Cash Flow Statement")
+    operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0)
+    investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0)
+    financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0)
+
+    if st.button("Calculate Ratios and Cash Flow"):
         # Liquidity Ratios
         current_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
         quick_ratio = (current_assets - inventory) / current_liabilities if current_liabilities != 0 else 0
@@ -125,7 +132,10 @@ else:
         # Efficiency
         inventory_turnover = cost_of_goods_sold / average_inventory if average_inventory != 0 else 0
 
-        st.subheader("Calculated Ratios")
+        # Cash Flow Calculations
+        net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
+
+        st.subheader("Calculated Ratios and Cash Flow")
 
         ratios_data = [
             {"Ratio": "Current Ratio", "Value": f"{current_ratio:.2f}",
@@ -166,7 +176,12 @@ else:
             {"Ratio": "Earnings Per Share (EPS)", "Value": f"{earnings_per_share:.2f}",
              "Analysis": "Low" if earnings_per_share < 1 else "Strong",
              "Implication": "Low profitability per share" if earnings_per_share < 1 else "Good profitability per share",
-             "Advice": "Grow net income or reduce share dilution." if earnings_per_share < 1 else "Maintain earnings growth."}
+             "Advice": "Grow net income or reduce share dilution." if earnings_per_share < 1 else "Maintain earnings growth."},
+
+            {"Ratio": "Net Cash Flow", "Value": f"{net_cash_flow:.2f}",
+             "Analysis": "Negative" if net_cash_flow < 0 else "Positive",
+             "Implication": "Insufficient cash flow" if net_cash_flow < 0 else "Healthy cash flow",
+             "Advice": "Improve operational cash flow." if net_cash_flow < 0 else "Maintain positive cash flow."}
         ]
 
         ratios_df = pd.DataFrame(ratios_data)
@@ -174,7 +189,7 @@ else:
 
         # CSV download
         csv = ratios_df.to_csv(index=False)
-        st.download_button("Download Ratios as CSV", csv, "financial_ratios_analysis.csv", "text/csv")
+        st.download_button("Download Ratios and Cash Flow as CSV", csv, "financial_ratios_and_cashflow_analysis.csv", "text/csv")
 
     if not os.path.exists("results"):
         os.makedirs("results")
