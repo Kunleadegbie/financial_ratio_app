@@ -5,10 +5,12 @@ import os
 # Load user access CSV
 USERS_CSV = "data/users.csv"
 
+# Check if the file exists, if not, create it with the necessary columns
 if not os.path.exists(USERS_CSV):
     df = pd.DataFrame(columns=["name", "email", "status", "trial_used", "approved"])
     df.to_csv(USERS_CSV, index=False)
 
+# Load the user data
 users_df = pd.read_csv(USERS_CSV)
 
 # Ensure 'approved' column exists
@@ -32,14 +34,14 @@ def save_users_df(df):
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
+# Check if the login button was clicked
 if login_button:
     if user_name and user_email:
+        # Check if the user exists in the dataframe based on email
         user_record = users_df[users_df['email'] == user_email]
-        
-        # Check if user_record is empty
+
         if user_record.empty:
-            st.write("No matching user found.")
-            st.write(user_record)  # This will display an empty DataFrame or show any relevant info
+            # If no record found, create a new user record
             new_user = pd.DataFrame([[user_name, user_email, "pending", "no", "no"]], columns=["name", "email", "status", "trial_used", "approved"])
             users_df = pd.concat([users_df, new_user], ignore_index=True)
             save_users_df(users_df)
@@ -48,9 +50,7 @@ if login_button:
             users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
             save_users_df(users_df)
         else:
-            st.write("User record found:")
-            st.write(user_record)  # This will show the user record for debugging
-            
+            # If user exists, check trial and approval status
             status = user_record.iloc[0]['status']
             trial_used = user_record.iloc[0]['trial_used']
             approved = user_record.iloc[0]['approved']
@@ -143,6 +143,11 @@ else:
     financing_cash_flow = st.number_input("Financing Cash Flow")
 
     # Check if the user has used their trial and is not approved
+    user_record = users_df[users_df['email'] == user_email]  # Get the user's record again
+    if user_record.empty:
+        st.warning("User record not found.")
+        st.stop()
+
     if user_record.iloc[0]['trial_used'] == "yes" and user_record.iloc[0]['approved'] == "no":
         st.warning("You cannot use the Financial Ratio Calculator again. Please contact the admin for approval.")
         st.stop()
@@ -153,5 +158,4 @@ else:
 
         # Display results
         st.subheader("Calculated Ratios and Cash Flow")
-
         st.write(f"Net Cash Flow: {net_cash_flow:.2f}")
