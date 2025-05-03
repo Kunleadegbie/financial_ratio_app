@@ -45,6 +45,7 @@ if login_button:
             users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
             save_users_df(users_df)
         else:
+            # Ensure the user_record is not empty
             status = user_record.iloc[0]['status']
             trial_used = user_record.iloc[0]['trial_used']
             approved = user_record.iloc[0]['approved']
