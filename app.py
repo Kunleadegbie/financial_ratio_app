@@ -45,6 +45,7 @@ if login_button:
             users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
             save_users_df(users_df)
         else:
+            # Extract trial_used and approved status for the logged-in user
             status = user_record.iloc[0]['status']
             trial_used = user_record.iloc[0]['trial_used']
             approved = user_record.iloc[0]['approved']
@@ -147,5 +148,4 @@ else:
 
         # Display results
         st.subheader("Calculated Ratios and Cash Flow")
-
         st.write(f"Net Cash Flow: {net_cash_flow:.2f}")
