@@ -96,15 +96,6 @@ st.markdown("""
 # Title
 st.title("CHUMCRED ACADEMY Financial Ratio Calculator")
 
-# User login section
-st.sidebar.header("User Login")
-name = st.sidebar.text_input("Full Name")
-email = st.sidebar.text_input("Email")
-company = st.sidebar.text_input("Company Name (optional)")
-
-if name and email:
-    st.sidebar.success(f"Welcome {name}! Start your calculation below.")
-
     st.header("Enter Financial Figures")
 
     st.subheader("Liquidity Ratios")
