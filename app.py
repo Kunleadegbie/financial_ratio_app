@@ -21,7 +21,14 @@ def is_admin(email):
 def capture_user(email, name):
     user = {"email": email, "name": name, "role": "Admin" if is_admin(email) else "Regular"}
     users_df = pd.read_csv(users_file)
-    users_df = users_df.append(user, ignore_index=True)
+
+    # Convert user dict to DataFrame for concatenation
+    new_user_df = pd.DataFrame([user])
+
+    # Concatenate the new user DataFrame to the existing one
+    users_df = pd.concat([users_df, new_user_df], ignore_index=True)
+
+    # Save back to CSV
     users_df.to_csv(users_file, index=False)
 
 # Function to display all users (admin only)
@@ -145,3 +152,4 @@ if __name__ == "__main__":
             calculate_financial_ratios()
         else:
             st.sidebar.error("Please enter both name and email to log in.")
+
