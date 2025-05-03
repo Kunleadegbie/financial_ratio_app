@@ -65,27 +65,15 @@ else:
     st.title("📊 Financial Ratio Analysis App")
     st.write(f"Hello **{user_name}** — your email: {user_email}")
 
-    # Custom CSS for clean styling
     st.markdown("""
         <style>
-        .main {
-            background-color: #f5f7fa;
-        }
-        .block-container {
-            padding-top: 2rem;
-        }
-        .stButton>button {
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 5px;
-        }
-        .stButton>button:hover {
-            background-color: #45a049;
-        }
+        .main { background-color: #f5f7fa; }
+        .block-container { padding-top: 2rem; }
+        .stButton>button { background-color: #4CAF50; color: white; border-radius: 5px; }
+        .stButton>button:hover { background-color: #45a049; }
         </style>
         """, unsafe_allow_html=True)
 
-    # Title and input sections
     st.title("CHUMCRED ACADEMY Financial Ratio Calculator")
     st.header("Enter Financial Figures")
     company = st.text_input("Company Name (optional)")
@@ -116,72 +104,77 @@ else:
     average_payable = st.number_input("Average Accounts Payable", min_value=0.0)
     accounts_payable = st.number_input("Accounts Payable", min_value=0.0)
 
-    # Calculation button
+    st.subheader("Per Share Data")
+    number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0)
+
     if st.button("Calculate Ratios"):
-        # Example ratios calculation
-        liquidity_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
-        profitability_ratio = gross_profit / revenue if revenue != 0 else 0
-        solvency_ratio = total_liabilities / equity if equity != 0 else 0
-        efficiency_ratio = cost_of_goods_sold / average_inventory if average_inventory != 0 else 0
-
-        # Display the results
-        st.subheader("Calculated Ratios")
-        st.write(f"Liquidity Ratio: {liquidity_ratio:.2f}")
-        st.write(f"Profitability Ratio: {profitability_ratio:.2f}")
-        st.write(f"Solvency Ratio: {solvency_ratio:.2f}")
-        st.write(f"Efficiency Ratio: {efficiency_ratio:.2f}")
-
-        # Prepare data for CSV download
-        results = {
-            "Liquidity Ratio": liquidity_ratio,
-            "Profitability Ratio": profitability_ratio,
-            "Solvency Ratio": solvency_ratio,
-            "Efficiency Ratio": efficiency_ratio
-        }
-        results_df = pd.DataFrame([results])
-
-        csv = results_df.to_csv(index=False)
-        st.download_button("Download Results as CSV", csv, "financial_ratios.csv", "text/csv")
-
-        # 🚀 Liquidity Ratios Detailed Analysis
-        st.subheader("Liquidity Ratios Detailed Analysis")
-
+        # Liquidity Ratios
         current_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
         quick_ratio = (current_assets - inventory) / current_liabilities if current_liabilities != 0 else 0
         cash_ratio = cash / current_liabilities if current_liabilities != 0 else 0
 
-        analysis_data = [
-            {
-                "Ratio": "Current Ratio",
-                "Value": f"{current_ratio:.2f}",
-                "Analysis": "Weak" if current_ratio < 2 else "Healthy",
-                "Implication": "Struggle to cover short-term debts" if current_ratio < 2 else "Can cover short-term obligations",
-                "Advice": "Increase liquid assets." if current_ratio < 2 else "Maintain current liquidity."
-            },
-            {
-                "Ratio": "Quick Ratio",
-                "Value": f"{quick_ratio:.2f}",
-                "Analysis": "Weak" if quick_ratio < 1 else "Healthy",
-                "Implication": "Insufficient liquid assets" if quick_ratio < 1 else "Adequate quick liquidity",
-                "Advice": "Increase cash or receivables." if quick_ratio < 1 else "Good liquidity management."
-            },
-            {
-                "Ratio": "Cash Ratio",
-                "Value": f"{cash_ratio:.2f}",
-                "Analysis": "Low" if cash_ratio < 0.5 else "Adequate",
-                "Implication": "Limited immediate liquidity" if cash_ratio < 0.5 else "Sufficient immediate liquidity",
-                "Advice": "Boost cash reserves." if cash_ratio < 0.5 else "Maintain cash position."
-            }
+        # Profitability Ratios
+        gross_profit_margin = gross_profit / revenue if revenue != 0 else 0
+        return_on_assets = net_income / total_assets if total_assets != 0 else 0
+        return_on_equity = net_income / equity if equity != 0 else 0
+        earnings_per_share = net_income / number_of_shares if number_of_shares != 0 else 0
+
+        # Solvency
+        debt_to_equity = total_liabilities / equity if equity != 0 else 0
+
+        # Efficiency
+        inventory_turnover = cost_of_goods_sold / average_inventory if average_inventory != 0 else 0
+
+        st.subheader("Calculated Ratios")
+
+        ratios_data = [
+            {"Ratio": "Current Ratio", "Value": f"{current_ratio:.2f}",
+             "Analysis": "Weak" if current_ratio < 2 else "Strong",
+             "Implication": "Struggle to cover short-term debts" if current_ratio < 2 else "Can cover short-term debts comfortably",
+             "Advice": "Increase liquid assets." if current_ratio < 2 else "Maintain current ratio."},
+
+            {"Ratio": "Quick Ratio", "Value": f"{quick_ratio:.2f}",
+             "Analysis": "Weak" if quick_ratio < 1 else "Strong",
+             "Implication": "Insufficient liquid assets" if quick_ratio < 1 else "Sufficient quick assets",
+             "Advice": "Increase cash or receivables." if quick_ratio < 1 else "Maintain quick ratio."},
+
+            {"Ratio": "Cash Ratio", "Value": f"{cash_ratio:.2f}",
+             "Analysis": "Low" if cash_ratio < 1 else "Strong",
+             "Implication": "Limited immediate liquidity" if cash_ratio < 1 else "Good immediate liquidity",
+             "Advice": "Boost cash reserves." if cash_ratio < 1 else "Maintain cash levels."},
+
+            {"Ratio": "Debt-to-Equity", "Value": f"{debt_to_equity:.2f}",
+             "Analysis": "High" if debt_to_equity > 2 else "Healthy",
+             "Implication": "High leverage risk" if debt_to_equity > 2 else "Balanced capital structure",
+             "Advice": "Reduce debts or increase equity." if debt_to_equity > 2 else "Maintain leverage."},
+
+            {"Ratio": "Gross Profit Margin", "Value": f"{gross_profit_margin:.2f}",
+             "Analysis": "Low" if gross_profit_margin < 0.3 else "Good",
+             "Implication": "Thin profit margin" if gross_profit_margin < 0.3 else "Healthy profit margin",
+             "Advice": "Increase sales or reduce costs." if gross_profit_margin < 0.3 else "Maintain margins."},
+
+            {"Ratio": "Return on Assets (ROA)", "Value": f"{return_on_assets:.2f}",
+             "Analysis": "Low" if return_on_assets < 0.05 else "Good",
+             "Implication": "Inefficient asset use" if return_on_assets < 0.05 else "Efficient asset utilization",
+             "Advice": "Improve operational efficiency." if return_on_assets < 0.05 else "Maintain efficiency."},
+
+            {"Ratio": "Return on Equity (ROE)", "Value": f"{return_on_equity:.2f}",
+             "Analysis": "Low" if return_on_equity < 0.1 else "Strong",
+             "Implication": "Poor shareholder returns" if return_on_equity < 0.1 else "Good shareholder returns",
+             "Advice": "Improve profitability." if return_on_equity < 0.1 else "Maintain profitability."},
+
+            {"Ratio": "Earnings Per Share (EPS)", "Value": f"{earnings_per_share:.2f}",
+             "Analysis": "Low" if earnings_per_share < 1 else "Strong",
+             "Implication": "Low profitability per share" if earnings_per_share < 1 else "Good profitability per share",
+             "Advice": "Grow net income or reduce share dilution." if earnings_per_share < 1 else "Maintain earnings growth."}
         ]
 
-        liquidity_df = pd.DataFrame(analysis_data)
+        ratios_df = pd.DataFrame(ratios_data)
+        st.dataframe(ratios_df)
 
-        st.dataframe(liquidity_df)
+        # CSV download
+        csv = ratios_df.to_csv(index=False)
+        st.download_button("Download Ratios as CSV", csv, "financial_ratios_analysis.csv", "text/csv")
 
-        # Download button for Liquidity Analysis
-        liquidity_csv = liquidity_df.to_csv(index=False)
-        st.download_button("Download Liquidity Analysis as CSV", liquidity_csv, "liquidity_analysis.csv", "text/csv")
-
-    # Create results directory if it doesn't exist
     if not os.path.exists("results"):
         os.makedirs("results")
