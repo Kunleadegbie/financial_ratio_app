@@ -1,122 +1,122 @@
 import streamlit as st
 import pandas as pd
+import os
+from datetime import datetime
+from io import BytesIO
 
-# Input fields for financial data
-st.title("Financial Ratio Analysis")
+# Load user access CSV
+USERS_CSV = "data/users.csv"
 
-current_assets = st.number_input("Enter Current Assets", min_value=0.0, value=10000.0)
-current_liabilities = st.number_input("Enter Current Liabilities", min_value=0.0, value=5000.0)
-inventory = st.number_input("Enter Inventory", min_value=0.0, value=2000.0)
-cash = st.number_input("Enter Cash", min_value=0.0, value=1500.0)
-gross_profit = st.number_input("Enter Gross Profit", min_value=0.0, value=4000.0)
-net_income = st.number_input("Enter Net Income", min_value=0.0, value=3000.0)
-revenue = st.number_input("Enter Revenue", min_value=0.0, value=15000.0)
-total_liabilities = st.number_input("Enter Total Liabilities", min_value=0.0, value=8000.0)
-equity = st.number_input("Enter Equity", min_value=0.0, value=12000.0)
-average_inventory = st.number_input("Enter Average Inventory", min_value=0.0, value=1000.0)
-average_receivable = st.number_input("Enter Average Receivables", min_value=0.0, value=1200.0)
-average_payable = st.number_input("Enter Average Payables", min_value=0.0, value=800.0)
+if not os.path.exists(USERS_CSV):
+    df = pd.DataFrame(columns=["name", "email", "status", "trial_used"])
+    df.to_csv(USERS_CSV, index=False)
 
-# Initialize the ratios dictionary
-ratios = {}
+users_df = pd.read_csv(USERS_CSV)
 
-# Liquidity Ratios
-if current_liabilities > 0:
-    ratios["Current Ratio"] = current_assets / current_liabilities
-if current_assets > 0:
-    ratios["Quick Ratio"] = (current_assets - inventory) / current_liabilities
-if cash > 0:
-    ratios["Cash Ratio"] = cash / current_liabilities
+# User login inputs
+st.sidebar.title("Login")
+user_name = st.sidebar.text_input("Enter your Name and Surname")
+user_email = st.sidebar.text_input("Enter your Email")
+login_button = st.sidebar.button("Login")
 
-# Profitability Ratios
-if revenue > 0:
-    ratios["Gross Profit Margin"] = (gross_profit / revenue) * 100
-if revenue > 0:
-    ratios["Net Profit Margin"] = (net_income / revenue) * 100
+def save_users_df(df):
+    df.to_csv(USERS_CSV, index=False)
 
-# Solvency Ratios
-if total_liabilities > 0:
-    ratios["Debt to Equity Ratio"] = total_liabilities / equity
+# Session state for login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-# Efficiency Ratios
-if average_inventory > 0:
-    ratios["Inventory Turnover"] = gross_profit / average_inventory  # Typically, use COGS instead of gross profit
-if average_receivable > 0:
-    ratios["Receivables Turnover"] = revenue / average_receivable
-if average_payable > 0:
-    ratios["Payables Turnover"] = gross_profit / average_payable  # Typically, use COGS instead of gross profit
+if login_button:
+    if user_name and user_email:
+        user_record = users_df[users_df['email'] == user_email]
 
-# Results list to store the analyzed data
-results = []
-
-# Analyze ratios
-for ratio, value in ratios.items():
-    if "Margin" in ratio or "%" in ratio:
-        if value >= 20:
-            analysis = "Strong"
-            implication = "Healthy profitability"
-            advice = "Maintain operational efficiency."
-        elif 10 <= value < 20:
-            analysis = "Average"
-            implication = "Manageable but could improve"
-            advice = "Review pricing and cost controls."
+        if user_record.empty:
+            new_user = pd.DataFrame([[user_name, user_email, "pending", "no"]], columns=["name", "email", "status", "trial_used"])
+            users_df = pd.concat([users_df, new_user], ignore_index=True)
+            save_users_df(users_df)
+            st.success("Free trial granted. Enjoy your one-time access!")
+            st.session_state.logged_in = True
+            users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
+            save_users_df(users_df)
         else:
-            analysis = "Weak"
-            implication = "Profitability risk"
-            advice = "Optimize revenue or reduce costs."
+            status = user_record.iloc[0]['status']
+            trial_used = user_record.iloc[0]['trial_used']
+
+            if status == "authorized":
+                st.success("Welcome back, authorized user!")
+                st.session_state.logged_in = True
+            elif trial_used == "no":
+                st.success("Free trial granted. Enjoy your one-time access!")
+                st.session_state.logged_in = True
+                users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
+                save_users_df(users_df)
+            else:
+                st.error("Access denied. Please contact admin for authorization.")
     else:
-        if ratio == "Current Ratio":
-            if value >= 2:
-                analysis = "Strong"
-                implication = "Good short-term liquidity"
-                advice = "Maintain balance."
-            elif 1 <= value < 2:
-                analysis = "Weak"
-                implication = "Struggle to cover short-term debts"
-                advice = "Increase liquid assets."
-            else:
-                analysis = "Low"
-                implication = "High liquidity risk"
-                advice = "Improve working capital."
-        elif ratio == "Quick Ratio":
-            if value >= 1:
-                analysis = "Strong"
-                implication = "Adequate liquid assets"
-                advice = "Stable financial position."
-            elif 0.5 <= value < 1:
-                analysis = "Weak"
-                implication = "Insufficient liquid assets"
-                advice = "Increase cash or receivables."
-            else:
-                analysis = "Low"
-                implication = "Liquidity concerns"
-                advice = "Boost quick assets."
-        elif ratio == "Cash Ratio":
-            if value >= 1:
-                analysis = "Strong"
-                implication = "Immediate liquidity available"
-                advice = "Maintain cash reserves."
-            elif 0.5 <= value < 1:
-                analysis = "Weak"
-                implication = "Moderate liquidity"
-                advice = "Enhance cash position."
-            else:
-                analysis = "Low"
-                implication = "Limited immediate liquidity"
-                advice = "Boost cash reserves."
-        else:
-            analysis = "-"
-            implication = "-"
-            advice = "-"
+        st.warning("Please enter both Name and Email.")
 
-    # Append results for each ratio
-    results.append([ratio, round(value, 2), analysis, implication, advice])
+# If not logged in, stop execution
+if not st.session_state.logged_in:
+    st.stop()
 
-# Create a DataFrame for displaying the results
-result_df = pd.DataFrame(results, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
+else:
+    # MAIN APP AFTER LOGIN
+    st.title("📊 Financial Ratio Analysis App")
+    st.write(f"Hello **{user_name}** — your email: {user_email}")
 
-# Display the results in a dataframe
-st.dataframe(result_df)
+    # Custom CSS for clean styling
+    st.markdown("""
+        <style>
+        .main {
+            background-color: #f5f7fa;
+        }
+        .block-container {
+            padding-top: 2rem;
+        }
+        .stButton>button {
+            background-color: #1a73e8;
+            color: white;
+            border-radius: 5px;
+        }
+        .stButton>button:hover {
+            background-color: #155ab6;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
-# Provide a button to download the results as a CSV file
-st.download_button(label="Download CSV", data=result_df.to_csv(index=False), file_name="financial_ratios.csv", mime="text/csv")
+    # Title and input sections
+    st.title("CHUMCRED ACADEMY Financial Ratio Calculator")
+    st.header("Enter Financial Figures")
+    company = st.text_input("Company Name (optional)")
+
+    st.subheader("Liquidity Ratios")
+    current_assets = st.number_input("Current Assets", min_value=0.0)
+    current_liabilities = st.number_input("Current Liabilities", min_value=0.0)
+    inventory = st.number_input("Inventory", min_value=0.0)
+    cash = st.number_input("Cash & Cash Equivalents", min_value=0.0)
+
+    st.subheader("Profitability Ratios")
+    gross_profit = st.number_input("Gross Profit", min_value=0.0)
+    net_income = st.number_input("Net Income", min_value=0.0)
+    revenue = st.number_input("Revenue", min_value=0.0)
+    total_assets = st.number_input("Total Assets", min_value=0.0)
+    equity = st.number_input("Equity", min_value=0.0)
+    operating_profit = st.number_input("Operating Profit", min_value=0.0)
+
+    st.subheader("Solvency Ratios")
+    total_liabilities = st.number_input("Total Liabilities", min_value=0.0)
+    interest_expense = st.number_input("Interest Expense", min_value=0.0)
+
+    st.subheader("Efficiency Ratios")
+    cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0)
+    average_inventory = st.number_input("Average Inventory", min_value=0.0)
+    accounts_receivable = st.number_input("Accounts Receivable", min_value=0.0)
+    average_receivable = st.number_input("Average Accounts Receivable", min_value=0.0)
+    average_payable = st.number_input("Average Accounts Payable", min_value=0.0)
+    accounts_payable = st.number_input("Accounts Payable", min_value=0.0)
+
+
+
+    # Create results directory if it doesn't exist
+    if not os.path.exists("results"):
+        os.makedirs("results")
