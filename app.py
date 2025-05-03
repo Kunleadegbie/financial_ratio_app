@@ -61,13 +61,18 @@ if login_button:
     else:
         st.warning("Please enter both Name and Email.")
 
-# If not logged in, stop the app
+# User authorization check
 if not st.session_state.logged_in:
     st.stop()
-
 else:
     st.title("📊 Financial Ratio Analysis App")
-    st.write(f"Hello **{user_name}** — your email: {user_email}")  
+    st.write(f"Hello **{user_name}** — your email: {user_email}")
+
+    st.header("Enter Financial Figures")
+    company = st.text_input("Company Name (optional)")
+
+    st.subheader("Liquidity Ratios")
+    current_assets = st.number_input("Current Assets", min_value=0.0)
 
 # Create results directory if it doesn't exist
 if not os.path.exists("results"):
