@@ -1,5 +1,3 @@
-# Script to add admin role
-
 import streamlit as st
 import pandas as pd
 import os
@@ -12,6 +10,14 @@ if not os.path.exists(USERS_CSV):
     df.to_csv(USERS_CSV, index=False)
 
 users_df = pd.read_csv(USERS_CSV)
+
+# Ensure 'approved' column exists
+def ensure_columns_exist(users_df):
+    if 'approved' not in users_df.columns:
+        users_df['approved'] = 'no'
+
+# Ensure the column exists
+ensure_columns_exist(users_df)
 
 # User login inputs
 st.sidebar.title("Login")
