@@ -78,7 +78,7 @@ if user_name.strip().upper() == "ADEKUNLE ADEGBIE":
                 if st.button("Reject", key=f"reject_{idx}"):
                     users_df.loc[users_df['email'] == row['email'], 'status'] = 'rejected'
                     save_users_df(users_df)
-                    st.experimental_rerun()
+                    st.rerun()
     else:
         st.sidebar.write("No pending users.")
 
