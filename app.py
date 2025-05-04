@@ -1,4 +1,4 @@
-#New script
+#latest script
 
 import streamlit as st
 import pandas as pd
@@ -42,7 +42,7 @@ if login_button:
         user_record = users_df[users_df['email'] == user_email]
 
         if user_record.empty:
-            # New user
+            # New user — first time
             new_user = pd.DataFrame([[user_name, user_email, "pending", "no", "no"]], columns=["name", "email", "status", "trial_used", "approved"])
             users_df = pd.concat([users_df, new_user], ignore_index=True)
             save_users_df(users_df)
@@ -51,7 +51,6 @@ if login_button:
             users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
             save_users_df(users_df)
         else:
-            # Existing user
             trial_used = user_record.iloc[0]['trial_used']
             approved = user_record.iloc[0]['approved']
 
@@ -63,8 +62,8 @@ if login_button:
             elif trial_used == "yes" and approved == "no":
                 st.warning("You have already used your free trial. Please contact the admin for approval.")
                 st.session_state.logged_in = False
-            else:
-                st.success("Welcome back! You have already used your free trial.")
+            elif trial_used == "yes" and approved == "yes":
+                st.success("Welcome back! Admin has approved your continued access.")
                 st.session_state.logged_in = True
     else:
         st.warning("Please enter both Name and Email.")
@@ -81,7 +80,6 @@ if user_email == "kadegbie@gmail.com":
     st.subheader("Admin Section")
     st.write("This section is for admin use only.")
 
-    # Show list of emails pending approval
     pending_users = users_df[(users_df['trial_used'] == 'yes') & (users_df['approved'] == 'no')]
 
     if not pending_users.empty:
@@ -150,7 +148,6 @@ investing_cash_flow = st.number_input("Investing Cash Flow", value=0.0)
 financing_cash_flow = st.number_input("Financing Cash Flow", value=0.0)
 
 # Calculate and Display Ratios and Cash Flow
-# Calculate and Display Ratios and Cash Flow
 if st.button("Calculate Ratios and Cash Flow"):
     net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
 
@@ -164,50 +161,19 @@ if st.button("Calculate Ratios and Cash Flow"):
     return_on_equity = net_income / equity if equity else 0
     earnings_per_share = net_income / number_of_shares if number_of_shares else 0
 
-    # Prepare Results Table
+    # Results Table Data
     results_data = [
-        ["Current Ratio", round(current_ratio, 2), "Weak" if current_ratio < 1.5 else "Good", 
-         "Struggle to cover short-term debts" if current_ratio < 1.5 else "Comfortable liquidity", 
-         "Increase liquid assets." if current_ratio < 1.5 else "Maintain liquidity position."],
-
-        ["Quick Ratio", round(quick_ratio, 2), "Weak" if quick_ratio < 1.0 else "Good",
-         "Insufficient liquid assets" if quick_ratio < 1.0 else "Sufficient liquid assets",
-         "Increase cash or receivables." if quick_ratio < 1.0 else "Maintain position."],
-
-        ["Cash Ratio", round(cash_ratio, 2), "Low" if cash_ratio < 0.5 else "Good",
-         "Limited immediate liquidity" if cash_ratio < 0.5 else "Strong immediate liquidity",
-         "Boost cash reserves." if cash_ratio < 0.5 else "Maintain cash reserves."],
-
-        ["Debt-to-Equity", round(debt_to_equity, 2), "Healthy" if 0.5 <= debt_to_equity <= 2.0 else ("High" if debt_to_equity > 2.0 else "Low"),
-         "Balanced capital structure" if 0.5 <= debt_to_equity <= 2.0 else ("Highly leveraged" if debt_to_equity > 2.0 else "Under-leveraged"),
-         "Maintain leverage." if 0.5 <= debt_to_equity <= 2.0 else ("Reduce debt." if debt_to_equity > 2.0 else "Consider using more debt financing.")],
-
-        ["Gross Profit Margin", round(gross_profit_margin, 2), "Good" if gross_profit_margin >= 0.4 else "Low",
-         "Healthy profit margin" if gross_profit_margin >= 0.4 else "Thin profit margin",
-         "Maintain margins." if gross_profit_margin >= 0.4 else "Review pricing and cost control."],
-
-        ["Return on Assets (ROA)", round(return_on_assets, 2), "Good" if return_on_assets >= 0.1 else "Low",
-         "Efficient asset utilization" if return_on_assets >= 0.1 else "Inefficient use of assets",
-         "Maintain efficiency." if return_on_assets >= 0.1 else "Improve asset productivity."],
-
-        ["Return on Equity (ROE)", round(return_on_equity, 2), "Strong" if return_on_equity >= 0.15 else "Low",
-         "Good shareholder returns" if return_on_equity >= 0.15 else "Poor returns to shareholders",
-         "Maintain profitability." if return_on_equity >= 0.15 else "Improve profit margins."],
-
-        ["Earnings Per Share (EPS)", round(earnings_per_share, 2), "Low" if earnings_per_share < 1.0 else "Good",
-         "Low profitability per share" if earnings_per_share < 1.0 else "Healthy earnings per share",
-         "Grow net income or reduce share dilution." if earnings_per_share < 1.0 else "Maintain earnings level."],
-
-        ["Net Cash Flow", f"{net_cash_flow:,.2f}", "Positive" if net_cash_flow >= 0 else "Negative",
-         "Healthy cash flow" if net_cash_flow >= 0 else "Negative cash position",
-         "Maintain positive cash flow." if net_cash_flow >= 0 else "Control expenses and boost inflow."]
+        ["Current Ratio", round(current_ratio, 2), "Weak", "Struggle to cover short-term debts", "Increase liquid assets."],
+        ["Quick Ratio", round(quick_ratio, 2), "Weak", "Insufficient liquid assets", "Increase cash or receivables."],
+        ["Cash Ratio", round(cash_ratio, 2), "Low", "Limited immediate liquidity", "Boost cash reserves."],
+        ["Debt-to-Equity", round(debt_to_equity, 2), "Healthy", "Balanced capital structure", "Maintain leverage."],
+        ["Gross Profit Margin", round(gross_profit_margin, 2), "Good", "Healthy profit margin", "Maintain margins."],
+        ["Return on Assets (ROA)", round(return_on_assets, 2), "Good", "Efficient asset utilization", "Maintain efficiency."],
+        ["Return on Equity (ROE)", round(return_on_equity, 2), "Strong", "Good shareholder returns", "Maintain profitability."],
+        ["Earnings Per Share (EPS)", round(earnings_per_share, 2), "Low", "Low profitability per share", "Grow net income or reduce share dilution."],
+        ["Net Cash Flow", f"{net_cash_flow:,.2f}", "Positive", "Healthy cash flow", "Maintain positive cash flow."]
     ]
 
     results_df = pd.DataFrame(results_data, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
-
-    st.subheader("📊 Financial Ratios Analysis Summary")
+    st.subheader("📊 Financial Ratio & Cash Flow Results")
     st.dataframe(results_df, use_container_width=True)
-
-    # Optional: Save results to CSV if needed
-    results_df.to_csv("data/last_ratio_analysis.csv", index=False)
-
