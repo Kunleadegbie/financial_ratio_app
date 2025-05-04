@@ -73,7 +73,7 @@ if user_name.strip().upper() == "ADEKUNLE ADEGBIE":
                 if st.button("Approve", key=f"approve_{idx}"):
                     users_df.loc[users_df['email'] == row['email'], 'status'] = 'authorized'
                     save_users_df(users_df)
-                    st.experimental_rerun()
+                    st.rerun()
             with col2:
                 if st.button("Reject", key=f"reject_{idx}"):
                     users_df.loc[users_df['email'] == row['email'], 'status'] = 'rejected'
