@@ -1,169 +1,195 @@
 import streamlit as st
 import pandas as pd
 import os
+from datetime import datetime
+from io import BytesIO
 
-# Path to user data CSV
+# Load user access CSV
 USERS_CSV = "data/users.csv"
 
-# Initialize user CSV if it doesn't exist
 if not os.path.exists(USERS_CSV):
-    df = pd.DataFrame(columns=["name", "email", "status", "trial_used", "approved"])
+    df = pd.DataFrame(columns=["name", "email", "status", "trial_used"])
     df.to_csv(USERS_CSV, index=False)
 
-# Load users dataframe
 users_df = pd.read_csv(USERS_CSV)
 
-# Ensure 'approved' column exists
-if 'approved' not in users_df.columns:
-    users_df['approved'] = 'no'
-
-def save_users_df(df):
-    df.to_csv(USERS_CSV, index=False)
-
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
-# Sidebar login
+# User login inputs
 st.sidebar.title("Login")
 user_name = st.sidebar.text_input("Enter your Name and Surname")
 user_email = st.sidebar.text_input("Enter your Email")
 login_button = st.sidebar.button("Login")
 
-# Login process
+def save_users_df(df):
+    df.to_csv(USERS_CSV, index=False)
+
+# Session state for login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
 if login_button:
     if user_name and user_email:
         user_record = users_df[users_df['email'] == user_email]
 
         if user_record.empty:
-            new_user = pd.DataFrame([[user_name, user_email, "pending", "no", "no"]], columns=["name", "email", "status", "trial_used", "approved"])
+            new_user = pd.DataFrame([[user_name, user_email, "pending", "no"]], columns=["name", "email", "status", "trial_used"])
             users_df = pd.concat([users_df, new_user], ignore_index=True)
             save_users_df(users_df)
-            st.success("Free trial granted.")
+            st.success("Free trial granted. Enjoy your one-time access!")
             st.session_state.logged_in = True
             users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
             save_users_df(users_df)
         else:
+            status = user_record.iloc[0]['status']
             trial_used = user_record.iloc[0]['trial_used']
-            approved = user_record.iloc[0]['approved']
 
-            if trial_used == "no":
-                st.success("Free trial granted.")
+            if status == "authorized":
+                st.success("Welcome back, authorized user!")
+                st.session_state.logged_in = True
+            elif trial_used == "no":
+                st.success("Free trial granted. Enjoy your one-time access!")
                 st.session_state.logged_in = True
                 users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
                 save_users_df(users_df)
-            elif trial_used == "yes" and approved == "no":
-                st.warning("Trial used. Await admin approval.")
-                st.session_state.logged_in = False
-            elif trial_used == "yes" and approved == "yes":
-                st.success("Welcome back. Approved.")
+            else:
+                st.success("Welcome back!")
                 st.session_state.logged_in = True
     else:
-        st.warning("Enter both Name and Email.")
+        st.warning("Please enter both Name and Email.")
 
-def check_access(email):
-    record = users_df[users_df['email'] == email]
-    if not record.empty and record.iloc[0]['trial_used'] == "yes" and record.iloc[0]['approved'] == "no":
-        st.warning("Trial used. Contact admin.")
-        st.stop()
-
-# Admin section
-if user_email == "kadegbie@gmail.com":
-    st.subheader("Admin Panel")
-    pending_users = users_df[(users_df['trial_used'] == 'yes') & (users_df['approved'] == 'no')]
-
-    if not pending_users.empty:
-        st.write("Pending Approvals")
-        st.dataframe(pending_users[['name', 'email']])
-
-        approve_emails = st.text_area("Emails to Approve (comma-separated)").strip()
-        deny_emails = st.text_area("Emails to Deny (comma-separated)").strip()
-
-        if st.button("Process"):
-            if approve_emails:
-                approve_list = [email.strip() for email in approve_emails.split(",") if email.strip()]
-                users_df.loc[users_df['email'].isin(approve_list), 'approved'] = 'yes'
-                st.success(f"Approved: {', '.join(approve_list)}")
-
-            if deny_emails:
-                deny_list = [email.strip() for email in deny_emails.split(",") if email.strip()]
-                users_df.loc[users_df['email'].isin(deny_list), 'approved'] = 'no'
-                st.info(f"Denied: {', '.join(deny_list)}")
-
-            save_users_df(users_df)
-    else:
-        st.write("No pending approvals.")
-
+# If not logged in, stop execution
 if not st.session_state.logged_in:
     st.stop()
 
-check_access(user_email)
+else:
+    # MAIN APP AFTER LOGIN
+    st.title("📊 Financial Ratio Analysis App")
+    st.write(f"Hello **{user_name}** — your email: {user_email}")
 
-# Financial Calculator App
-st.title("📊 Financial Ratio Calculator")
+    st.markdown("""
+        <style>
+        .main { background-color: #f5f7fa; }
+        .block-container { padding-top: 2rem; }
+        .stButton>button { background-color: #4CAF50; color: white; border-radius: 5px; }
+        .stButton>button:hover { background-color: #45a049; }
+        </style>
+        """, unsafe_allow_html=True)
 
-# Financial Inputs
-st.header("Enter Financial Figures")
-company = st.text_input("Company Name (optional)")
+    st.title("CHUMCRED ACADEMY Financial Ratio Calculator")
+    st.header("Enter Financial Figures")
+    company = st.text_input("Company Name (optional)")
 
-current_assets = st.number_input("Current Assets", min_value=0.0, value=0.0)
-current_liabilities = st.number_input("Current Liabilities", min_value=0.0, value=0.0)
-inventory = st.number_input("Inventory", min_value=0.0, value=0.0)
-cash = st.number_input("Cash & Equivalents", min_value=0.0, value=0.0)
-gross_profit = st.number_input("Gross Profit", min_value=0.0, value=0.0)
-net_income = st.number_input("Net Income", min_value=0.0, value=0.0)
-revenue = st.number_input("Revenue", min_value=0.0, value=0.0)
-total_assets = st.number_input("Total Assets", min_value=0.0, value=0.0)
-equity = st.number_input("Equity", min_value=0.0, value=0.0)
-total_liabilities = st.number_input("Total Liabilities", min_value=0.0, value=0.0)
-number_of_shares = st.number_input("Number of Shares", min_value=0.0, value=0.0)
-operating_cash_flow = st.number_input("Operating Cash Flow", value=0.0)
-investing_cash_flow = st.number_input("Investing Cash Flow", value=0.0)
-financing_cash_flow = st.number_input("Financing Cash Flow", value=0.0)
+    # Financial Ratios Inputs
+    st.subheader("Liquidity Ratios")
+    current_assets = st.number_input("Current Assets", min_value=0.0)
+    current_liabilities = st.number_input("Current Liabilities", min_value=0.0)
+    inventory = st.number_input("Inventory", min_value=0.0)
+    cash = st.number_input("Cash & Cash Equivalents", min_value=0.0)
 
-if st.button("Calculate"):
-    result_data = []
-    net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
+    st.subheader("Profitability Ratios")
+    gross_profit = st.number_input("Gross Profit", min_value=0.0)
+    net_income = st.number_input("Net Income", min_value=0.0)
+    revenue = st.number_input("Revenue", min_value=0.0)
+    total_assets = st.number_input("Total Assets", min_value=0.0)
+    equity = st.number_input("Equity", min_value=0.0)
+    operating_profit = st.number_input("Operating Profit", min_value=0.0)
 
-    if current_assets and current_liabilities:
-        current_ratio = current_assets / current_liabilities
-        result_data.append(["Current Ratio", round(current_ratio, 2), "Weak", "Struggle to cover short-term debts", "Increase liquid assets."])
+    st.subheader("Solvency Ratios")
+    total_liabilities = st.number_input("Total Liabilities", min_value=0.0)
+    interest_expense = st.number_input("Interest Expense", min_value=0.0)
 
-    if (current_assets - inventory) and current_liabilities:
-        quick_ratio = (current_assets - inventory) / current_liabilities
-        result_data.append(["Quick Ratio", round(quick_ratio, 2), "Weak", "Insufficient liquid assets", "Increase cash or receivables."])
+    st.subheader("Efficiency Ratios")
+    cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0)
+    average_inventory = st.number_input("Average Inventory", min_value=0.0)
+    accounts_receivable = st.number_input("Accounts Receivable", min_value=0.0)
+    average_receivable = st.number_input("Average Accounts Receivable", min_value=0.0)
+    average_payable = st.number_input("Average Accounts Payable", min_value=0.0)
+    accounts_payable = st.number_input("Accounts Payable", min_value=0.0)
 
-    if cash and current_liabilities:
-        cash_ratio = cash / current_liabilities
-        result_data.append(["Cash Ratio", round(cash_ratio, 2), "Low", "Limited immediate liquidity", "Boost cash reserves."])
+    st.subheader("Per Share Data")
+    number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0)
 
-    if total_liabilities and equity:
-        debt_equity = total_liabilities / equity
-        result_data.append(["Debt-to-Equity", round(debt_equity, 2), "Healthy", "Balanced capital structure", "Maintain leverage."])
+    # Cash Flow Inputs
+    st.subheader("Cash Flow Statement")
+    operating_cash_flow = st.number_input("Operating Cash Flow")
+    investing_cash_flow = st.number_input("Investing Cash Flow")
+    financing_cash_flow = st.number_input("Financing Cash Flow")
 
-    if gross_profit and revenue:
-        gross_margin = gross_profit / revenue
-        result_data.append(["Gross Profit Margin", round(gross_margin, 2), "Good", "Healthy profit margin", "Maintain margins."])
+    if st.button("Calculate Ratios and Cash Flow"):
+        # Liquidity Ratios
+        current_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
+        quick_ratio = (current_assets - inventory) / current_liabilities if current_liabilities != 0 else 0
+        cash_ratio = cash / current_liabilities if current_liabilities != 0 else 0
 
-    if net_income and total_assets:
-        roa = net_income / total_assets
-        result_data.append(["Return on Assets (ROA)", round(roa, 2), "Good", "Efficient asset use", "Maintain efficiency."])
+        # Profitability Ratios
+        gross_profit_margin = gross_profit / revenue if revenue != 0 else 0
+        return_on_assets = net_income / total_assets if total_assets != 0 else 0
+        return_on_equity = net_income / equity if equity != 0 else 0
+        earnings_per_share = net_income / number_of_shares if number_of_shares != 0 else 0
 
-    if net_income and equity:
-        roe = net_income / equity
-        result_data.append(["Return on Equity (ROE)", round(roe, 2), "Strong", "Good shareholder returns", "Maintain profitability."])
+        # Solvency
+        debt_to_equity = total_liabilities / equity if equity != 0 else 0
 
-    if net_income and number_of_shares:
-        eps = net_income / number_of_shares
-        result_data.append(["Earnings Per Share (EPS)", round(eps, 2), "Low", "Low profit per share", "Grow net income or reduce dilution."])
+        # Efficiency
+        inventory_turnover = cost_of_goods_sold / average_inventory if average_inventory != 0 else 0
 
-    result_data.append(["Net Cash Flow", round(net_cash_flow, 2), "Positive" if net_cash_flow > 0 else "Negative", 
-                        "Healthy cash flow" if net_cash_flow > 0 else "Cash flow issues", 
-                        "Maintain positive cash flow" if net_cash_flow > 0 else "Improve cash flow management"])
+        # Cash Flow Calculations
+        net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
 
-    # Convert to DataFrame
-    result_df = pd.DataFrame(result_data, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
-    st.dataframe(result_df)
+        st.subheader("Calculated Ratios and Cash Flow")
 
-    csv = result_df.to_csv(index=False).encode('utf-8')
-    st.download_button("Download Results as CSV", data=csv, file_name=f"{company}_financial_ratios.csv", mime="text/csv")
+        ratios_data = [
+            {"Ratio": "Current Ratio", "Value": f"{current_ratio:.2f}",
+             "Analysis": "Weak" if current_ratio < 2 else "Strong",
+             "Implication": "Struggle to cover short-term debts" if current_ratio < 2 else "Can cover short-term debts comfortably",
+             "Advice": "Increase liquid assets." if current_ratio < 2 else "Maintain current ratio."},
 
+            {"Ratio": "Quick Ratio", "Value": f"{quick_ratio:.2f}",
+             "Analysis": "Weak" if quick_ratio < 1 else "Strong",
+             "Implication": "Insufficient liquid assets" if quick_ratio < 1 else "Sufficient quick assets",
+             "Advice": "Increase cash or receivables." if quick_ratio < 1 else "Maintain quick ratio."},
+
+            {"Ratio": "Cash Ratio", "Value": f"{cash_ratio:.2f}",
+             "Analysis": "Low" if cash_ratio < 1 else "Strong",
+             "Implication": "Limited immediate liquidity" if cash_ratio < 1 else "Good immediate liquidity",
+             "Advice": "Boost cash reserves." if cash_ratio < 1 else "Maintain cash levels."},
+
+            {"Ratio": "Debt-to-Equity", "Value": f"{debt_to_equity:.2f}",
+             "Analysis": "High" if debt_to_equity > 2 else "Healthy",
+             "Implication": "High leverage risk" if debt_to_equity > 2 else "Balanced capital structure",
+             "Advice": "Reduce debts or increase equity." if debt_to_equity > 2 else "Maintain leverage."},
+
+            {"Ratio": "Gross Profit Margin", "Value": f"{gross_profit_margin:.2f}",
+             "Analysis": "Low" if gross_profit_margin < 0.3 else "Good",
+             "Implication": "Thin profit margin" if gross_profit_margin < 0.3 else "Healthy profit margin",
+             "Advice": "Increase sales or reduce costs." if gross_profit_margin < 0.3 else "Maintain margins."},
+
+            {"Ratio": "Return on Assets (ROA)", "Value": f"{return_on_assets:.2f}",
+             "Analysis": "Low" if return_on_assets < 0.05 else "Good",
+             "Implication": "Inefficient asset use" if return_on_assets < 0.05 else "Efficient asset utilization",
+             "Advice": "Improve operational efficiency." if return_on_assets < 0.05 else "Maintain efficiency."},
+
+            {"Ratio": "Return on Equity (ROE)", "Value": f"{return_on_equity:.2f}",
+             "Analysis": "Low" if return_on_equity < 0.1 else "Strong",
+             "Implication": "Poor shareholder returns" if return_on_equity < 0.1 else "Good shareholder returns",
+             "Advice": "Improve profitability." if return_on_equity < 0.1 else "Maintain profitability."},
+
+            {"Ratio": "Earnings Per Share (EPS)", "Value": f"{earnings_per_share:.2f}",
+             "Analysis": "Low" if earnings_per_share < 1 else "Strong",
+             "Implication": "Low profitability per share" if earnings_per_share < 1 else "Good profitability per share",
+             "Advice": "Grow net income or reduce share dilution." if earnings_per_share < 1 else "Maintain earnings growth."},
+
+            {"Ratio": "Net Cash Flow", "Value": f"{net_cash_flow:.2f}",
+             "Analysis": "Negative" if net_cash_flow < 0 else "Positive",
+             "Implication": "Insufficient cash flow" if net_cash_flow < 0 else "Healthy cash flow",
+             "Advice": "Improve operational cash flow." if net_cash_flow < 0 else "Maintain positive cash flow."}
+        ]
+
+        ratios_df = pd.DataFrame(ratios_data)
+        st.dataframe(ratios_df)
+
+        # CSV download
+        csv = ratios_df.to_csv(index=False)
+        st.download_button("Download Ratios and Cash Flow as CSV", csv, "financial_ratios_and_cashflow_analysis.csv", "text/csv")
+
+    if not os.path.exists("results"):
+        os.makedirs("results")
