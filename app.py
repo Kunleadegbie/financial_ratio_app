@@ -126,6 +126,7 @@ operating_cash_flow = st.number_input("Operating Cash Flow")
 investing_cash_flow = st.number_input("Investing Cash Flow")
 financing_cash_flow = st.number_input("Financing Cash Flow")
 
+# Compute ratios and display
 if st.button("Calculate Ratios and Cash Flow"):
     ratios_data = []
 
@@ -164,57 +165,65 @@ if st.button("Calculate Ratios and Cash Flow"):
     if revenue != 0:
         ratios_data.append({
             "Ratio": "Gross Profit Margin",
-            "Value": f"{gross_profit/revenue:.2f}",
-            "Analysis": "Good" if gross_profit/revenue >= 0.4 else "Weak",
-            "Implication": "Healthy profit margin" if gross_profit/revenue >= 0.4 else "Low profitability",
-            "Advice": "Maintain margins." if gross_profit/revenue >= 0.4 else "Improve cost control."
+            "Value": f"{(gross_profit/revenue)*100:.2f}%",
+            "Analysis": "Low" if (gross_profit/revenue)*100 < 30 else "Healthy",
+            "Implication": "Cost of sales is high" if (gross_profit/revenue)*100 < 30 else "Good control over cost of sales",
+            "Advice": "Improve cost management." if (gross_profit/revenue)*100 < 30 else "Maintain cost structure."
+        })
+        ratios_data.append({
+            "Ratio": "Net Profit Margin",
+            "Value": f"{(net_income/revenue)*100:.2f}%",
+            "Analysis": "Low" if (net_income/revenue)*100 < 10 else "Good",
+            "Implication": "Operational inefficiencies" if (net_income/revenue)*100 < 10 else "Profitable business",
+            "Advice": "Reduce expenses." if (net_income/revenue)*100 < 10 else "Maintain profitability."
         })
 
     if total_assets != 0:
         ratios_data.append({
             "Ratio": "Return on Assets (ROA)",
-            "Value": f"{net_income/total_assets:.2f}",
-            "Analysis": "Good" if net_income/total_assets >= 0.15 else "Weak",
-            "Implication": "Efficient asset utilization" if net_income/total_assets >= 0.15 else "Underperforming assets",
-            "Advice": "Maintain efficiency." if net_income/total_assets >= 0.15 else "Improve asset utilization."
+            "Value": f"{(net_income/total_assets)*100:.2f}%",
+            "Analysis": "Low" if (net_income/total_assets)*100 < 5 else "Good",
+            "Implication": "Poor asset utilization" if (net_income/total_assets)*100 < 5 else "Efficient use of assets",
+            "Advice": "Improve asset management." if (net_income/total_assets)*100 < 5 else "Maintain operations."
         })
 
     if equity != 0:
         ratios_data.append({
             "Ratio": "Return on Equity (ROE)",
-            "Value": f"{net_income/equity:.2f}",
-            "Analysis": "Strong" if net_income/equity >= 0.3 else "Low",
-            "Implication": "Good shareholder returns" if net_income/equity >= 0.3 else "Weak returns",
-            "Advice": "Maintain profitability." if net_income/equity >= 0.3 else "Improve earnings."
+            "Value": f"{(net_income/equity)*100:.2f}%",
+            "Analysis": "Low" if (net_income/equity)*100 < 15 else "Strong",
+            "Implication": "Poor return for investors" if (net_income/equity)*100 < 15 else "Attractive for investors",
+            "Advice": "Improve profitability." if (net_income/equity)*100 < 15 else "Maintain return levels."
         })
 
     if number_of_shares != 0:
         ratios_data.append({
             "Ratio": "Earnings Per Share (EPS)",
             "Value": f"{net_income/number_of_shares:.2f}",
-            "Analysis": "Low" if net_income/number_of_shares < 1 else "Good",
-            "Implication": "Low profitability per share" if net_income/number_of_shares < 1 else "Healthy earnings per share",
-            "Advice": "Grow net income or reduce share dilution." if net_income/number_of_shares < 1 else "Maintain EPS."
+            "Analysis": "N/A",
+            "Implication": "Earnings attributable per share",
+            "Advice": "Monitor quarterly."
         })
 
-    net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
-    ratios_data.append({
-        "Ratio": "Net Cash Flow",
-        "Value": f"{net_cash_flow:,.2f}",
-        "Analysis": "Positive" if net_cash_flow >= 0 else "Negative",
-        "Implication": "Healthy cash flow" if net_cash_flow >= 0 else "Cash outflow issue",
-        "Advice": "Maintain positive cash flow." if net_cash_flow >= 0 else "Control expenses and increase inflow."
-    })
+    # Cash Flow Summary
+    cash_flow_summary = {
+        "Operating Cash Flow": operating_cash_flow,
+        "Investing Cash Flow": investing_cash_flow,
+        "Financing Cash Flow": financing_cash_flow
+    }
 
-    ratios_df = pd.DataFrame(ratios_data)
-    st.dataframe(ratios_df)
+    result_df = pd.DataFrame(ratios_data)
+    st.subheader("📊 Financial Ratios Analysis Result")
+    st.dataframe(result_df)
 
-    # Download CSV
-    csv_buffer = BytesIO()
-    ratios_df.to_csv(csv_buffer, index=False)
+    st.subheader("💰 Cash Flow Summary")
+    st.write(cash_flow_summary)
+
+    # Download button for ratios data
+    csv = result_df.to_csv(index=False).encode()
     st.download_button(
-        label="Download Results as CSV",
-        data=csv_buffer.getvalue(),
-        file_name=f"{company or 'financial_ratios'}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        label="📥 Download Ratios as CSV",
+        data=csv,
+        file_name=f"{company}_financial_ratios.csv" if company else "financial_ratios.csv",
         mime="text/csv"
     )
