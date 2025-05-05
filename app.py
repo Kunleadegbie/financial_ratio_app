@@ -5,7 +5,7 @@ from datetime import datetime
 from io import BytesIO
 
 # Load user access CSV
-USERS_CSV = "C:/Users/ADEGBIE ADEKUNLE/financial_ratio_app/data/users.csv"
+USERS_CSV = "data/users.csv"
 
 if not os.path.exists(USERS_CSV):
     df = pd.DataFrame(columns=["name", "email", "status", "trial_used", "last_action", "action_by"])
