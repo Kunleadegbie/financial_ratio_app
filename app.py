@@ -102,7 +102,7 @@ if user_name.strip().upper() == "ADEKUNLE ADEGBIE":
         st.sidebar.write("No pending users.")
 
 # === MAIN APP ===
-st.title("📊 Financial Ratio Analysis App")
+st.title("📊 Financial Ratios Analysis App")
 st.write(f"Hello **{user_name}** — your email: {user_email}")
 
 st.markdown("""
@@ -114,7 +114,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("CHUMCRED ACADEMY Financial Ratio Calculator")
+st.title("CHUMCRED ACADEMY Financial Ratios Calculator")
 st.header("Enter Financial Figures")
 company = st.text_input("Company Name (optional)")
 
@@ -201,4 +201,4 @@ if st.button("Calculate Ratios and Cash Flow"):
     # Allow download
     output = BytesIO()
     ratios_df.to_csv(output, index=False)
-    st.download_button("Download Ratios CSV", data=output.getvalue(), file_name="financial_ratios.csv", mime="text/csv")
+    st.download_button("Download Ratios CSV", data=output.getvalue(), file_name="C:/Users/ADEGBIE ADEKUNLE/financial_ratio_app/data/users.csv", mime="text/csv")
