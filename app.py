@@ -5,7 +5,7 @@ from datetime import datetime
 from io import BytesIO
 
 # Load user access CSV
-USERS_CSV = "data/users.csv"
+USERS_CSV = "C:/Users/ADEGBIE ADEKUNLE/financial_ratio_app/data/users.csv"
 
 if not os.path.exists(USERS_CSV):
     df = pd.DataFrame(columns=["name", "email", "status", "trial_used", "last_action", "action_by"])
@@ -201,4 +201,4 @@ if st.button("Calculate Ratios and Cash Flow"):
     # Allow download
     output = BytesIO()
     ratios_df.to_csv(output, index=False)
-    st.download_button("Download Ratios CSV", data=output.getvalue(), file_name="financial_ratios.csv", mime="text/csv")
+    st.download_button("Download Ratios CSV", data=output.getvalue(), file_name="financial_ratios.csv", mime="text/csv")aA ./qa	ZA
