@@ -1,8 +1,7 @@
-#Adding more features
+#Full script
 
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 
 # App title and header
 st.title("📊 Financial Ratio & Cash Flow Calculator")
@@ -53,6 +52,54 @@ book_value_per_share = st.number_input("Book Value Per Share", min_value=0.0, va
 
 # --- Button to Calculate Ratios ---
 if st.button("📈 Calculate Ratios & Cash Flows"):
+    gross_profit = revenue - cost_of_goods_sold
+    ratios_data = []
+
+    ratios_data.extend([
+        {"Ratio": "Operating Cash Flow", "Value": f"{operating_cash_flow:.2f}"},
+        {"Ratio": "Investing Cash Flow", "Value": f"{investing_cash_flow:.2f}"},
+        {"Ratio": "Financing Cash Flow", "Value": f"{financing_cash_flow:.2f}"},
+    ])
+
+    if revenue:
+        ratios_data.extend([
+            {"Ratio": "Gross Profit Margin", "Value": f"{(gross_profit / revenue) * 100:.2f}%"},
+            {"Ratio": "Net Profit Margin", "Value": f"{(net_income / revenue) * 100:.2f}%"},
+            {"Ratio": "Operating Profit Margin", "Value": f"{(operating_profit / revenue) * 100:.2f}%"}
+        ])
+
+    if total_assets:
+        ratios_data.append({"Ratio": "Return on Assets (ROA)", "Value": f"{(net_income / total_assets) * 100:.2f}%"})
+
+    if equity:
+        ratios_data.append({"Ratio": "Return on Equity (ROE)", "Value": f"{(net_income / equity) * 100:.2f}%"})
+
+    if total_liabilities and equity:
+        ratios_data.append({"Ratio": "Debt to Equity Ratio", "Value": f"{(total_liabilities / equity):.2f}"})
+
+    if number_of_shares:
+        ratios_data.append({"Ratio": "Earnings per Share (EPS)", "Value": f"{(net_income / number_of_shares):.2f}"})
+
+    if total_deposits:
+        ratios_data.append({"Ratio": "Loan-to-Deposit Ratio (LDR)", "Value": f"{(total_loans / total_deposits) * 100:.2f}%"})
+
+    if total_loans:
+        ratios_data.append({"Ratio": "Non-Performing Loan (NPL) Ratio", "Value": f"{(non_performing_loans / total_loans) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Loan Loss Reserve to Gross Loans", "Value": f"{(loan_loss_reserves / total_loans) * 100:.2f}%"})
+
+    if non_performing_loans:
+        ratios_data.append({"Ratio": "Provision Coverage Ratio", "Value": f"{(loan_loss_reserves / non_performing_loans) * 100:.2f}%"})
+
+    if average_earning_assets:
+        ratios_data.append({"Ratio": "Net Interest Margin (NIM)", "Value": f"{(net_income / average_earning_assets) * 100:.2f}%"})
+
+    if operating_income:
+        ratios_data.append({"Ratio": "Cost-to-Income Ratio", "Value": f"{(operating_profit / operating_income) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Staff Cost to Income Ratio", "Value": f"{(staff_costs / operating_income) * 100:.2f}%"})
+
+    st.subheader("📊 Calculated Ratios & Cash Flows")
+    result_df = pd.DataFrame(ratios_data)
+    st.dataframe(result_df)
 
     gross_profit = revenue - cost_of_goods_sold
     ratios_data = []
