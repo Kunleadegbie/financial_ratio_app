@@ -1,4 +1,4 @@
-#Updated Script
+#Current Script
 
 import streamlit as st
 import pandas as pd
@@ -28,7 +28,7 @@ operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0, valu
 investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0, value=0.0)
 financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0, value=0.0)
 
-# Banking-specific inputs
+# Additional Financial Institution Inputs
 st.subheader("🏦 Banking-Specific Inputs")
 total_loans = st.number_input("Total Loans", min_value=0.0, value=0.0)
 total_deposits = st.number_input("Total Deposits", min_value=0.0, value=0.0)
@@ -53,10 +53,13 @@ book_value_per_share = st.number_input("Book Value per Share", min_value=0.0, va
 
 # Button to calculate ratios
 if st.button("📈 Calculate Ratios & Cash Flows"):
+    # Calculate gross profit
     gross_profit = revenue - cost_of_goods_sold
+
+    # List to hold ratio data
     ratios_data = []
 
-    # Cash Flows
+    # Cash Flow figures
     ratios_data.extend([
         {"Ratio": "Operating Cash Flow", "Value": f"{operating_cash_flow:.2f}"},
         {"Ratio": "Investing Cash Flow", "Value": f"{investing_cash_flow:.2f}"},
@@ -70,16 +73,20 @@ if st.button("📈 Calculate Ratios & Cash Flows"):
             {"Ratio": "Net Profit Margin", "Value": f"{(net_income / revenue) * 100:.2f}%"},
             {"Ratio": "Operating Profit Margin", "Value": f"{(operating_profit / revenue) * 100:.2f}%"}
         ])
+
     if total_assets != 0:
         ratios_data.append({"Ratio": "Return on Assets (ROA)", "Value": f"{(net_income / total_assets) * 100:.2f}%"})
+
     if equity != 0:
         ratios_data.append({"Ratio": "Return on Equity (ROE)", "Value": f"{(net_income / equity) * 100:.2f}%"})
-    if equity != 0:
+
+    if total_liabilities != 0 and equity != 0:
         ratios_data.append({"Ratio": "Debt to Equity Ratio", "Value": f"{(total_liabilities / equity):.2f}"})
+
     if number_of_shares != 0:
         ratios_data.append({"Ratio": "Earnings per Share (EPS)", "Value": f"{(net_income / number_of_shares):.2f}"})
 
-    # Liquidity Ratios
+    # Liquidity Ratios (Banks)
     if total_deposits != 0:
         ratios_data.append({"Ratio": "Loan-to-Deposit Ratio (LDR)", "Value": f"{(total_loans / total_deposits) * 100:.2f}%"})
     if net_cash_outflows_30d != 0:
@@ -89,40 +96,49 @@ if st.button("📈 Calculate Ratios & Cash Flows"):
 
     # Asset Quality Ratios
     if total_loans != 0:
-        ratios_data.append({"Ratio": "Non-Performing Loan Ratio (NPL)", "Value": f"{(non_performing_loans / total_loans) * 100:.2f}%"})
-        ratios_data.append({"Ratio": "Loan Loss Reserve Ratio (LLR)", "Value": f"{(loan_loss_reserves / total_loans) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Non-Performing Loan (NPL) Ratio", "Value": f"{(non_performing_loans / total_loans) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Loan Loss Reserve to Gross Loans", "Value": f"{(loan_loss_reserves / total_loans) * 100:.2f}%"})
+    if non_performing_loans != 0:
+        ratios_data.append({"Ratio": "Provision Coverage Ratio", "Value": f"{(loan_loss_reserves / non_performing_loans) * 100:.2f}%"})
 
-    # Efficiency Ratios
+    # Profitability Bank-Specific
     if average_earning_assets != 0:
-        ratios_data.append({"Ratio": "Net Interest Margin (NIM)", "Value": f"{(operating_income / average_earning_assets) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Net Interest Margin (NIM)", "Value": f"{(net_income / average_earning_assets) * 100:.2f}%"})
     if operating_income != 0:
-        ratios_data.append({"Ratio": "Cost-to-Income Ratio (CIR)", "Value": f"{(staff_costs / operating_income) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Cost-to-Income Ratio", "Value": f"{(operating_profit / operating_income) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Staff Cost to Income Ratio", "Value": f"{(staff_costs / operating_income) * 100:.2f}%"})
 
-    # Capital Adequacy Ratios
+    # Capital Adequacy
     if risk_weighted_assets != 0:
         ratios_data.append({"Ratio": "Capital Adequacy Ratio (CAR)", "Value": f"{((tier_1_capital + tier_2_capital) / risk_weighted_assets) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Tier 1 Capital Ratio", "Value": f"{(tier_1_capital / risk_weighted_assets) * 100:.2f}%"})
+    if total_assets != 0:
+        ratios_data.append({"Ratio": "Leverage Ratio", "Value": f"{(tier_1_capital / total_assets) * 100:.2f}%"})
 
-    # Market Risk Ratios
+    # Market Risk
     if capital_base != 0:
-        ratios_data.append({"Ratio": "Net Open Position (FX) to Capital", "Value": f"{(net_open_position / capital_base) * 100:.2f}%"})
+        ratios_data.append({"Ratio": "Foreign Exchange Exposure Ratio", "Value": f"{(net_open_position / capital_base) * 100:.2f}%"})
 
-    # Market Performance Ratios
-    if number_of_shares != 0:
-        ratios_data.append({"Ratio": "Dividend per Share (DPS)", "Value": f"{(dividends / number_of_shares):.2f}"})
-    if book_value_per_share != 0:
-        ratios_data.append({"Ratio": "Price to Book Ratio (P/B)", "Value": f"{(book_value_per_share):.2f}"})
+    # Growth & Valuation
+    ratios_data.append({"Ratio": "Deposit Growth Rate", "Value": f"{deposit_growth:.2f}%"})
+    ratios_data.append({"Ratio": "Loan Growth Rate", "Value": f"{loan_growth:.2f}%"})
+    if net_income != 0:
+        ratios_data.append({"Ratio": "Dividend Payout Ratio", "Value": f"{(dividends / net_income) * 100:.2f}%"})
 
-    # Growth Ratios
-    ratios_data.append({"Ratio": "Deposit Growth (%)", "Value": f"{deposit_growth:.2f}%"})
-    ratios_data.append({"Ratio": "Loan Growth (%)", "Value": f"{loan_growth:.2f}%"})
+    ratios_data.append({"Ratio": "Book Value per Share", "Value": f"{book_value_per_share:.2f}"})
 
-    # Display results
-    st.subheader("📊 Ratios & Cash Flow Results")
-    df = pd.DataFrame(ratios_data)
-    st.dataframe(df)
+    # Convert to DataFrame and display
+    ratios_df = pd.DataFrame(ratios_data)
+    st.subheader(f"📊 Financial Ratios for {company if company else 'the Company'}")
+    st.dataframe(ratios_df)
 
-    # Download button for Excel
-    towrite = BytesIO()
-    df.to_excel(towrite, index=False, sheet_name='Ratios')
-    towrite.seek(0)
-    st.download_button("📥 Download Results as Excel", data=towrite, file_name=f"{company}_ratios.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    # Download button
+    csv_buffer = BytesIO()
+    ratios_df.to_csv(csv_buffer, index=False)
+    csv_buffer.seek(0)
+    st.download_button(
+        label="📥 Download Ratios as CSV",
+        data=csv_buffer,
+        file_name=f"{company.replace(' ', '_')}_financial_ratios.csv" if company else "financial_ratios.csv",
+        mime="text/csv"
+    )
