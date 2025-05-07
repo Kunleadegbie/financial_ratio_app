@@ -1,186 +1,197 @@
-#Full script
+#New Script
 
 import streamlit as st
 import pandas as pd
+import os
+from datetime import datetime
+from io import BytesIO
 
-# App title and header
-st.title("📊 Financial Ratio & Cash Flow Calculator")
-st.markdown("Calculate key financial ratios and cash flows based on your input figures.")
+# Load user access CSV
+USERS_CSV = "data/users.csv"
 
-# Company name
-company = st.text_input("Company Name", "")
+if not os.path.exists(USERS_CSV):
+    df = pd.DataFrame(columns=["name", "email", "status", "trial_used"])
+    df.to_csv(USERS_CSV, index=False)
 
-# --- General Financial Data Inputs ---
-st.subheader("📃 General Financial Data")
-revenue = st.number_input("Revenue", min_value=0.0, value=0.0)
-cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0, value=0.0)
-operating_profit = st.number_input("Operating Profit", min_value=0.0, value=0.0)
-net_income = st.number_input("Net Income", min_value=0.0, value=0.0)
-total_assets = st.number_input("Total Assets", min_value=0.0, value=0.0)
-total_liabilities = st.number_input("Total Liabilities", min_value=0.0, value=0.0)
-equity = st.number_input("Equity", min_value=0.0, value=0.0)
-number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0, value=0.0)
+users_df = pd.read_csv(USERS_CSV)
 
-# --- Cash Flow Data ---
-st.subheader("💵 Cash Flow Data")
-operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0, value=0.0)
-investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0, value=0.0)
-financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0, value=0.0)
+# User login inputs
+st.sidebar.title("Login")
+user_name = st.sidebar.text_input("Enter your Name and Surname")
+user_email = st.sidebar.text_input("Enter your Email")
+login_button = st.sidebar.button("Login")
 
-# --- Banking/Financial Institution Data ---
-st.subheader("🏦 Banking & Financial Institution Data")
-total_loans = st.number_input("Total Loans", min_value=0.0, value=0.0)
-total_deposits = st.number_input("Total Deposits", min_value=0.0, value=0.0)
-non_performing_loans = st.number_input("Non-Performing Loans", min_value=0.0, value=0.0)
-loan_loss_reserves = st.number_input("Loan Loss Reserves", min_value=0.0, value=0.0)
-average_earning_assets = st.number_input("Average Earning Assets", min_value=0.0, value=0.0)
-operating_income = st.number_input("Operating Income", min_value=0.0, value=0.0)
-staff_costs = st.number_input("Staff Costs", min_value=0.0, value=0.0)
-tier_1_capital = st.number_input("Tier 1 Capital", min_value=0.0, value=0.0)
-tier_2_capital = st.number_input("Tier 2 Capital", min_value=0.0, value=0.0)
-capital_base = st.number_input("Capital Base", min_value=0.0, value=0.0)
-risk_weighted_assets = st.number_input("Risk-Weighted Assets", min_value=0.0, value=0.0)
-net_open_position = st.number_input("Net Open Position (FX)", min_value=0.0, value=0.0)
-dividends = st.number_input("Dividends Paid", min_value=0.0, value=0.0)
-deposit_growth = st.number_input("Deposit Growth (%)", min_value=0.0, value=0.0)
-loan_growth = st.number_input("Loan Growth (%)", min_value=0.0, value=0.0)
+def save_users_df(df):
+    df.to_csv(USERS_CSV, index=False)
 
-# --- Market & Valuation Data ---
-st.subheader("📈 Valuation Data")
-market_price_per_share = st.number_input("Market Price Per Share", min_value=0.0, value=0.0)
-book_value_per_share = st.number_input("Book Value Per Share", min_value=0.0, value=0.0)
+# Session state for login
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
-# --- Button to Calculate Ratios ---
-if st.button("📈 Calculate Ratios & Cash Flows"):
-    gross_profit = revenue - cost_of_goods_sold
-    ratios_data = []
+if login_button:
+    if user_name and user_email:
+        user_record = users_df[users_df['email'] == user_email]
 
-    ratios_data.extend([
-        {"Ratio": "Operating Cash Flow", "Value": f"{operating_cash_flow:.2f}"},
-        {"Ratio": "Investing Cash Flow", "Value": f"{investing_cash_flow:.2f}"},
-        {"Ratio": "Financing Cash Flow", "Value": f"{financing_cash_flow:.2f}"},
-    ])
+        if user_record.empty:
+            new_user = pd.DataFrame([[user_name, user_email, "pending", "no"]], columns=["name", "email", "status", "trial_used"])
+            users_df = pd.concat([users_df, new_user], ignore_index=True)
+            save_users_df(users_df)
+            st.success("Free trial granted. Enjoy your one-time access!")
+            st.session_state.logged_in = True
+            users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
+            save_users_df(users_df)
+        else:
+            status = user_record.iloc[0]['status']
+            trial_used = user_record.iloc[0]['trial_used']
 
-    if revenue:
-        ratios_data.extend([
-            {"Ratio": "Gross Profit Margin", "Value": f"{(gross_profit / revenue) * 100:.2f}%"},
-            {"Ratio": "Net Profit Margin", "Value": f"{(net_income / revenue) * 100:.2f}%"},
-            {"Ratio": "Operating Profit Margin", "Value": f"{(operating_profit / revenue) * 100:.2f}%"}
-        ])
+            if status == "authorized":
+                st.success("Welcome back, authorized user!")
+                st.session_state.logged_in = True
+            elif trial_used == "no":
+                st.success("Free trial granted. Enjoy your one-time access!")
+                st.session_state.logged_in = True
+                users_df.loc[users_df['email'] == user_email, 'trial_used'] = 'yes'
+                save_users_df(users_df)
+            else:
+                st.success("Welcome back!")
+                st.session_state.logged_in = True
+    else:
+        st.warning("Please enter both Name and Email.")
 
-    if total_assets:
-        ratios_data.append({"Ratio": "Return on Assets (ROA)", "Value": f"{(net_income / total_assets) * 100:.2f}%"})
+# If not logged in, stop execution
+if not st.session_state.logged_in:
+    st.stop()
 
-    if equity:
-        ratios_data.append({"Ratio": "Return on Equity (ROE)", "Value": f"{(net_income / equity) * 100:.2f}%"})
+else:
+    # MAIN APP AFTER LOGIN
+    st.title("📊 Financial Ratio Analysis App")
+    st.write(f"Hello **{user_name}** — your email: {user_email}")
 
-    if total_liabilities and equity:
-        ratios_data.append({"Ratio": "Debt to Equity Ratio", "Value": f"{(total_liabilities / equity):.2f}"})
+    st.markdown("""
+        <style>
+        .main { background-color: #f5f7fa; }
+        .block-container { padding-top: 2rem; }
+        .stButton>button { background-color: #4CAF50; color: white; border-radius: 5px; }
+        .stButton>button:hover { background-color: #45a049; }
+        </style>
+        """, unsafe_allow_html=True)
 
-    if number_of_shares:
-        ratios_data.append({"Ratio": "Earnings per Share (EPS)", "Value": f"{(net_income / number_of_shares):.2f}"})
+    st.title("CHUMCRED ACADEMY Financial Ratio Calculator")
+    st.header("Enter Financial Figures")
+    company = st.text_input("Company Name (optional)")
 
-    if total_deposits:
-        ratios_data.append({"Ratio": "Loan-to-Deposit Ratio (LDR)", "Value": f"{(total_loans / total_deposits) * 100:.2f}%"})
+    # Financial Ratios Inputs
+    st.subheader("Liquidity Ratios")
+    current_assets = st.number_input("Current Assets", min_value=0.0)
+    current_liabilities = st.number_input("Current Liabilities", min_value=0.0)
+    inventory = st.number_input("Inventory", min_value=0.0)
+    cash = st.number_input("Cash & Cash Equivalents", min_value=0.0)
 
-    if total_loans:
-        ratios_data.append({"Ratio": "Non-Performing Loan (NPL) Ratio", "Value": f"{(non_performing_loans / total_loans) * 100:.2f}%"})
-        ratios_data.append({"Ratio": "Loan Loss Reserve to Gross Loans", "Value": f"{(loan_loss_reserves / total_loans) * 100:.2f}%"})
+    st.subheader("Profitability Ratios")
+    gross_profit = st.number_input("Gross Profit", min_value=0.0)
+    net_income = st.number_input("Net Income", min_value=0.0)
+    revenue = st.number_input("Revenue", min_value=0.0)
+    total_assets = st.number_input("Total Assets", min_value=0.0)
+    equity = st.number_input("Equity", min_value=0.0)
+    operating_profit = st.number_input("Operating Profit", min_value=0.0)
 
-    if non_performing_loans:
-        ratios_data.append({"Ratio": "Provision Coverage Ratio", "Value": f"{(loan_loss_reserves / non_performing_loans) * 100:.2f}%"})
+    st.subheader("Solvency Ratios")
+    total_liabilities = st.number_input("Total Liabilities", min_value=0.0)
+    interest_expense = st.number_input("Interest Expense", min_value=0.0)
 
-    if average_earning_assets:
-        ratios_data.append({"Ratio": "Net Interest Margin (NIM)", "Value": f"{(net_income / average_earning_assets) * 100:.2f}%"})
+    st.subheader("Efficiency Ratios")
+    cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0)
+    average_inventory = st.number_input("Average Inventory", min_value=0.0)
+    accounts_receivable = st.number_input("Accounts Receivable", min_value=0.0)
+    average_receivable = st.number_input("Average Accounts Receivable", min_value=0.0)
+    average_payable = st.number_input("Average Accounts Payable", min_value=0.0)
+    accounts_payable = st.number_input("Accounts Payable", min_value=0.0)
 
-    if operating_income:
-        ratios_data.append({"Ratio": "Cost-to-Income Ratio", "Value": f"{(operating_profit / operating_income) * 100:.2f}%"})
-        ratios_data.append({"Ratio": "Staff Cost to Income Ratio", "Value": f"{(staff_costs / operating_income) * 100:.2f}%"})
+    st.subheader("Per Share Data")
+    number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0)
 
-    st.subheader("📊 Calculated Ratios & Cash Flows")
-    result_df = pd.DataFrame(ratios_data)
-    st.dataframe(result_df)
+    # Cash Flow Inputs
+    st.subheader("Cash Flow Statement")
+    operating_cash_flow = st.number_input("Operating Cash Flow")
+    investing_cash_flow = st.number_input("Investing Cash Flow")
+    financing_cash_flow = st.number_input("Financing Cash Flow")
 
-    gross_profit = revenue - cost_of_goods_sold
-    ratios_data = []
+    if st.button("Calculate Ratios and Cash Flow"):
+        # Liquidity Ratios
+        current_ratio = current_assets / current_liabilities if current_liabilities != 0 else 0
+        quick_ratio = (current_assets - inventory) / current_liabilities if current_liabilities != 0 else 0
+        cash_ratio = cash / current_liabilities if current_liabilities != 0 else 0
 
-    # --- Cash Flow figures ---
-    ratios_data.extend([
-        {"Ratio": "Operating Cash Flow", "Value": f"{operating_cash_flow:.2f}"},
-        {"Ratio": "Investing Cash Flow", "Value": f"{investing_cash_flow:.2f}"},
-        {"Ratio": "Financing Cash Flow", "Value": f"{financing_cash_flow:.2f}"},
-    ])
+        # Profitability Ratios
+        gross_profit_margin = gross_profit / revenue if revenue != 0 else 0
+        return_on_assets = net_income / total_assets if total_assets != 0 else 0
+        return_on_equity = net_income / equity if equity != 0 else 0
+        earnings_per_share = net_income / number_of_shares if number_of_shares != 0 else 0
 
-    # --- Profitability Ratios ---
-    if revenue:
-        ratios_data.extend([
-            {"Ratio": "Gross Profit Margin", "Value": f"{(gross_profit / revenue) * 100:.2f}%"},
-            {"Ratio": "Net Profit Margin", "Value": f"{(net_income / revenue) * 100:.2f}%"},
-            {"Ratio": "Operating Profit Margin", "Value": f"{(operating_profit / revenue) * 100:.2f}%"}
-        ])
+        # Solvency
+        debt_to_equity = total_liabilities / equity if equity != 0 else 0
 
-    if total_assets:
-        ratios_data.append({"Ratio": "Return on Assets (ROA)", "Value": f"{(net_income / total_assets) * 100:.2f}%"})
+        # Efficiency
+        inventory_turnover = cost_of_goods_sold / average_inventory if average_inventory != 0 else 0
 
-    if equity:
-        ratios_data.append({"Ratio": "Return on Equity (ROE)", "Value": f"{(net_income / equity) * 100:.2f}%"})
+        # Cash Flow Calculations
+        net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
 
-    if total_liabilities and equity:
-        ratios_data.append({"Ratio": "Debt to Equity Ratio", "Value": f"{(total_liabilities / equity):.2f}"})
+        st.subheader("Calculated Ratios and Cash Flow")
 
-    if number_of_shares:
-        ratios_data.append({"Ratio": "Earnings per Share (EPS)", "Value": f"{(net_income / number_of_shares):.2f}"})
+        ratios_data = [
+            {"Ratio": "Current Ratio", "Value": f"{current_ratio:.2f}",
+             "Analysis": "Weak" if current_ratio < 2 else "Strong",
+             "Implication": "Struggle to cover short-term debts" if current_ratio < 2 else "Can cover short-term debts comfortably",
+             "Advice": "Increase liquid assets." if current_ratio < 2 else "Maintain current ratio."},
 
-    # --- Liquidity Ratios (Banks) ---
-    if total_deposits:
-        ratios_data.append({"Ratio": "Loan-to-Deposit Ratio (LDR)", "Value": f"{(total_loans / total_deposits) * 100:.2f}%"})
+            {"Ratio": "Quick Ratio", "Value": f"{quick_ratio:.2f}",
+             "Analysis": "Weak" if quick_ratio < 1 else "Strong",
+             "Implication": "Insufficient liquid assets" if quick_ratio < 1 else "Sufficient quick assets",
+             "Advice": "Increase cash or receivables." if quick_ratio < 1 else "Maintain quick ratio."},
 
-    # --- Asset Quality Ratios ---
-    if total_loans:
-        ratios_data.append({"Ratio": "Non-Performing Loan (NPL) Ratio", "Value": f"{(non_performing_loans / total_loans) * 100:.2f}%"})
-        ratios_data.append({"Ratio": "Loan Loss Reserve to Gross Loans", "Value": f"{(loan_loss_reserves / total_loans) * 100:.2f}%"})
-    if non_performing_loans:
-        ratios_data.append({"Ratio": "Provision Coverage Ratio", "Value": f"{(loan_loss_reserves / non_performing_loans) * 100:.2f}%"})
+            {"Ratio": "Cash Ratio", "Value": f"{cash_ratio:.2f}",
+             "Analysis": "Low" if cash_ratio < 1 else "Strong",
+             "Implication": "Limited immediate liquidity" if cash_ratio < 1 else "Good immediate liquidity",
+             "Advice": "Boost cash reserves." if cash_ratio < 1 else "Maintain cash levels."},
 
-    # --- Profitability Ratios (Banks) ---
-    if average_earning_assets:
-        ratios_data.append({"Ratio": "Net Interest Margin (NIM)", "Value": f"{(net_income / average_earning_assets) * 100:.2f}%"})
-    if operating_income:
-        ratios_data.append({"Ratio": "Cost-to-Income Ratio", "Value": f"{(operating_profit / operating_income) * 100:.2f}%"})
-        ratios_data.append({"Ratio": "Staff Cost to Income Ratio", "Value": f"{(staff_costs / operating_income) * 100:.2f}%"})
+            {"Ratio": "Debt-to-Equity", "Value": f"{debt_to_equity:.2f}",
+             "Analysis": "High" if debt_to_equity > 2 else "Healthy",
+             "Implication": "High leverage risk" if debt_to_equity > 2 else "Balanced capital structure",
+             "Advice": "Reduce debts or increase equity." if debt_to_equity > 2 else "Maintain leverage."},
 
-    # --- Capital Adequacy Ratios ---
-    if risk_weighted_assets:
-        ratios_data.append({"Ratio": "Capital Adequacy Ratio (CAR)", "Value": f"{((tier_1_capital + tier_2_capital) / risk_weighted_assets) * 100:.2f}%"})
-        ratios_data.append({"Ratio": "Tier 1 Capital Ratio", "Value": f"{(tier_1_capital / risk_weighted_assets) * 100:.2f}%"})
-    if total_assets:
-        ratios_data.append({"Ratio": "Leverage Ratio", "Value": f"{(tier_1_capital / total_assets) * 100:.2f}%"})
+            {"Ratio": "Gross Profit Margin", "Value": f"{gross_profit_margin:.2f}",
+             "Analysis": "Low" if gross_profit_margin < 0.3 else "Good",
+             "Implication": "Thin profit margin" if gross_profit_margin < 0.3 else "Healthy profit margin",
+             "Advice": "Increase sales or reduce costs." if gross_profit_margin < 0.3 else "Maintain margins."},
 
-    # --- Market Risk Ratios ---
-    if capital_base:
-        ratios_data.append({"Ratio": "Foreign Exchange Exposure Ratio", "Value": f"{(net_open_position / capital_base) * 100:.2f}%"})
+            {"Ratio": "Return on Assets (ROA)", "Value": f"{return_on_assets:.2f}",
+             "Analysis": "Low" if return_on_assets < 0.05 else "Good",
+             "Implication": "Inefficient asset use" if return_on_assets < 0.05 else "Efficient asset utilization",
+             "Advice": "Improve operational efficiency." if return_on_assets < 0.05 else "Maintain efficiency."},
 
-    # --- Growth & Valuation Ratios ---
-    ratios_data.append({"Ratio": "Deposit Growth Rate", "Value": f"{deposit_growth:.2f}%"})
-    ratios_data.append({"Ratio": "Loan Growth Rate", "Value": f"{loan_growth:.2f}%"})
+            {"Ratio": "Return on Equity (ROE)", "Value": f"{return_on_equity:.2f}",
+             "Analysis": "Low" if return_on_equity < 0.1 else "Strong",
+             "Implication": "Poor shareholder returns" if return_on_equity < 0.1 else "Good shareholder returns",
+             "Advice": "Improve profitability." if return_on_equity < 0.1 else "Maintain profitability."},
 
-    if number_of_shares:
-        ratios_data.append({"Ratio": "Book Value Per Share", "Value": f"{(equity / number_of_shares):.2f}"})
-    if net_income:
-        ratios_data.append({"Ratio": "Dividend Payout Ratio", "Value": f"{(dividends / net_income) * 100:.2f}%"})
+            {"Ratio": "Earnings Per Share (EPS)", "Value": f"{earnings_per_share:.2f}",
+             "Analysis": "Low" if earnings_per_share < 1 else "Strong",
+             "Implication": "Low profitability per share" if earnings_per_share < 1 else "Good profitability per share",
+             "Advice": "Grow net income or reduce share dilution." if earnings_per_share < 1 else "Maintain earnings growth."},
 
-    # --- Display Results ---
-    ratios_df = pd.DataFrame(ratios_data)
-    st.subheader(f"📊 Financial Ratios for {company if company else 'the Company'}")
-    st.dataframe(ratios_df)
+            {"Ratio": "Net Cash Flow", "Value": f"{net_cash_flow:.2f}",
+             "Analysis": "Negative" if net_cash_flow < 0 else "Positive",
+             "Implication": "Insufficient cash flow" if net_cash_flow < 0 else "Healthy cash flow",
+             "Advice": "Improve operational cash flow." if net_cash_flow < 0 else "Maintain positive cash flow."}
+        ]
 
-    # --- Download CSV ---
-    csv_buffer = BytesIO()
-    ratios_df.to_csv(csv_buffer, index=False)
-    csv_buffer.seek(0)
-    st.download_button(
-        label="📥 Download Ratios as CSV",
-        data=csv_buffer,
-        file_name=f"{company.replace(' ', '_')}_financial_ratios.csv" if company else "financial_ratios.csv",
-        mime="text/csv"
-    )
+        ratios_df = pd.DataFrame(ratios_data)
+        st.dataframe(ratios_df)
+
+        # CSV download
+        csv = ratios_df.to_csv(index=False)
+        st.download_button("Download Ratios and Cash Flow as CSV", csv, "financial_ratios_and_cashflow_analysis.csv", "text/csv")
+
+    if not os.path.exists("results"):
+        os.makedirs("results")
