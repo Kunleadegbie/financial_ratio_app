@@ -2,13 +2,23 @@
 # (Your app.py code from previous message here. 
 # For brevity, I'm keeping it summarized in this comment — it will be included in the actual file.)
 
-import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
+from io import BytesIO
+import streamlit as st
 
-# Load or create user access CSV
+# Ensure 'data' directory exists
+if not os.path.exists("data"):
+    os.makedirs("data")
+
+# Load user access CSV
 USERS_CSV = "data/users.csv"
+
+if not os.path.exists(USERS_CSV):
+    df = pd.DataFrame(columns=["name", "email", "status", "trial_used", "role"])
+    df.to_csv(USERS_CSV, index=False)
+
 
 if not os.path.exists(USERS_CSV):
     df = pd.DataFrame(columns=["name", "email", "status", "trial_used", "role"])
