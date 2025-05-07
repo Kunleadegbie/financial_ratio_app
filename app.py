@@ -84,6 +84,7 @@ if "role" in st.session_state:
     elif st.session_state["role"] == "user":
         st.header("📈 Enter Financial Data")
 
+        # Financial Inputs
         revenue = st.number_input("Revenue", min_value=0.0, value=0.0)
         cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0, value=0.0)
         operating_profit = st.number_input("Operating Profit", min_value=0.0, value=0.0)
@@ -102,45 +103,35 @@ if "role" in st.session_state:
         non_performing_loans = st.number_input("Non-Performing Loans", min_value=0.0, value=0.0)
 
         if st.button("Calculate Ratios"):
+            ratios = []
+
+            # Financial Ratio Calculations (from original opp.py structure)
             try:
-                ratios = []
-                gross_profit = revenue - cost_of_goods_sold
+                gross_profit_margin = (revenue - cost_of_goods_sold) / revenue * 100 if revenue else 0
+                net_profit_margin = (net_income / revenue) * 100 if revenue else 0
+                roa = (net_income / total_assets) * 100 if total_assets else 0
+                roe = (net_income / equity) * 100 if equity else 0
+                debt_equity_ratio = (total_liabilities / equity) if equity else 0
+                earnings_per_share = (net_income / number_of_shares) if number_of_shares else 0
+                cash_flow_ratio = (operating_cash_flow / total_liabilities) if total_liabilities else 0
+                npl_ratio = (non_performing_loans / total_loans) * 100 if total_loans else 0
 
-                ratios.append({"Ratio": "Gross Profit Margin", "Value": f"{(gross_profit / revenue) * 100:.2f}%" if revenue else "N/A", "Analysis": "Profitability after direct costs", "Implication": "Higher is better", "Advice": "Control costs."})
-                ratios.append({"Ratio": "Net Profit Margin", "Value": f"{(net_income / revenue) * 100:.2f}%" if revenue else "N/A", "Analysis": "Overall profitability", "Implication": "Higher is better", "Advice": "Increase revenue, cut costs."})
-                ratios.append({"Ratio": "Operating Profit Margin", "Value": f"{(operating_profit / revenue) * 100:.2f}%" if revenue else "N/A", "Analysis": "Profit from operations", "Implication": "Higher is better", "Advice": "Boost operations."})
+                ratios.append(["Gross Profit Margin", f"{gross_profit_margin:.2f}%", "Profitability after cost of sales", "Higher is better", "Increase sales, reduce cost"])
+                ratios.append(["Net Profit Margin", f"{net_profit_margin:.2f}%", "Profitability after all expenses", "Higher is better", "Improve efficiency"])
+                ratios.append(["Return on Assets (ROA)", f"{roa:.2f}%", "Return per unit of assets", "Higher is better", "Optimize asset usage"])
+                ratios.append(["Return on Equity (ROE)", f"{roe:.2f}%", "Return on shareholders' funds", "Higher is better", "Boost profitability"])
+                ratios.append(["Debt to Equity Ratio", f"{debt_equity_ratio:.2f}", "Leverage indicator", "Lower is safer", "Reduce debt exposure"])
+                ratios.append(["Earnings Per Share (EPS)", f"{earnings_per_share:.2f}", "Profit per share", "Higher attracts investors", "Grow profits"])
+                ratios.append(["Cash Flow Ratio", f"{cash_flow_ratio:.2f}", "Liquidity indicator", "Higher is better", "Improve cash inflow"])
+                ratios.append(["Non-Performing Loan (NPL) Ratio", f"{npl_ratio:.2f}%", "Loan quality indicator", "Lower is better", "Manage credit risk"])
 
-                ratios.append({"Ratio": "Return on Assets (ROA)", "Value": f"{(net_income / total_assets) * 100:.2f}%" if total_assets else "N/A", "Analysis": "Efficiency of asset use", "Implication": "Higher is better", "Advice": "Optimize assets."})
-                ratios.append({"Ratio": "Return on Equity (ROE)", "Value": f"{(net_income / equity) * 100:.2f}%" if equity else "N/A", "Analysis": "Return to shareholders", "Implication": "Higher is better", "Advice": "Grow net income."})
-                ratios.append({"Ratio": "Debt-to-Equity", "Value": f"{(total_liabilities / equity):.2f}" if equity else "N/A", "Analysis": "Leverage position", "Implication": "Lower is safer", "Advice": "Manage debt levels."})
-                ratios.append({"Ratio": "Earnings per Share (EPS)", "Value": f"{(net_income / number_of_shares):.2f}" if number_of_shares else "N/A", "Analysis": "Shareholder return", "Implication": "Higher is better", "Advice": "Improve earnings."})
+                df_ratios = pd.DataFrame(ratios, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
+                st.subheader("📑 Financial Ratios Summary")
+                st.dataframe(df_ratios)
 
-                # Banking ratios
-                ldr = (total_loans / total_deposits) if total_deposits else 0.0
-                npl = (non_performing_loans / total_loans) if total_loans else 0.0
-                ratios.append({"Ratio": "Loan-to-Deposit Ratio (LDR)", "Value": f"{ldr:.2%}", "Analysis": "Loan funding coverage", "Implication": "Too high is risky", "Advice": "Balance deposits and loans."})
-                ratios.append({"Ratio": "Non-Performing Loans (NPL) Ratio", "Value": f"{npl:.2%}", "Analysis": "Loan portfolio health", "Implication": "Lower is better", "Advice": "Reduce bad loans."})
-
-                # Cash Flows
-                ratios.append({"Ratio": "Operating Cash Flow", "Value": f"{operating_cash_flow:,.2f}", "Analysis": "Liquidity from operations", "Implication": "Positive is healthy", "Advice": "Boost cash flows."})
-                ratios.append({"Ratio": "Investing Cash Flow", "Value": f"{investing_cash_flow:,.2f}", "Analysis": "Investments", "Implication": "Negative is normal", "Advice": "Invest wisely."})
-                ratios.append({"Ratio": "Financing Cash Flow", "Value": f"{financing_cash_flow:,.2f}", "Analysis": "Funding activities", "Implication": "Context dependent", "Advice": "Balance funding needs."})
-
-                df_result = pd.DataFrame(ratios)
-                st.subheader("📊 Results")
-                st.dataframe(df_result)
-
-                # CSV Download
-                csv_buffer = BytesIO()
-                df_result.to_csv(csv_buffer, index=False)
-                csv_buffer.seek(0)
-
-                st.download_button(
-                    label="📥 Download as CSV",
-                    data=csv_buffer,
-                    file_name="financial_ratios.csv",
-                    mime="text/csv"
-                )
+                # CSV download button
+                csv = df_ratios.to_csv(index=False).encode()
+                st.download_button("📥 Download Ratios CSV", data=csv, file_name="financial_ratios.csv", mime="text/csv")
 
             except Exception as e:
-                st.error(f"Calculation error: {e}")
+                st.error(f"Error during calculation: {e}")
