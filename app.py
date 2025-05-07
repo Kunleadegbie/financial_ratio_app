@@ -1,4 +1,4 @@
-# New script
+# New Revised script
 # (Your app.py code from previous message here. 
 # For brevity, I'm keeping it summarized in this comment — it will be included in the actual file.)
 
@@ -7,118 +7,137 @@ import pandas as pd
 from io import BytesIO
 import os
 
-# Constants
+# File to store user accounts
 USERS_CSV = "users.csv"
 
-# Ensure users.csv exists
-if not os.path.exists(USERS_CSV):
-    df = pd.DataFrame(columns=["username", "role"])
-    df.to_csv(USERS_CSV, index=False)
+# Load or create the user database
+if os.path.exists(USERS_CSV):
+    df_users = pd.read_csv(USERS_CSV)
+else:
+    df_users = pd.DataFrame(columns=["username", "password", "role"])
 
-# App Title
-st.title("📊 Financial Ratio & Cash Flow Calculator (Extended Edition)")
+# User authentication
+st.sidebar.title("🔐 Login")
 
-# User login simulation
-username = st.text_input("Enter your username to proceed:")
-role = st.selectbox("Select your role:", ["Admin", "User"])
+username = st.sidebar.text_input("Username")
+password = st.sidebar.text_input("Password", type="password")
+role = None
 
-# Save new user info if not already saved
-users_df = pd.read_csv(USERS_CSV)
-if username and username not in users_df["username"].values:
-    new_entry = pd.DataFrame({"username": [username], "role": [role]})
-    users_df = pd.concat([users_df, new_entry], ignore_index=True)
-    users_df.to_csv(USERS_CSV, index=False)
+if st.sidebar.button("Login"):
+    user_record = df_users[(df_users["username"] == username) & (df_users["password"] == password)]
+    if not user_record.empty:
+        st.sidebar.success(f"Welcome {username}!")
+        role = user_record.iloc[0]["role"]
+    else:
+        st.sidebar.error("Invalid username or password.")
 
-# Company input
-company = st.text_input("Company Name", "")
+# Admin Registration
+if st.sidebar.checkbox("Create Admin Account"):
+    new_admin_username = st.sidebar.text_input("New Admin Username")
+    new_admin_password = st.sidebar.text_input("New Admin Password", type="password")
+    if st.sidebar.button("Register Admin"):
+        if new_admin_username and new_admin_password:
+            new_admin = pd.DataFrame([{"username": new_admin_username, "password": new_admin_password, "role": "admin"}])
+            df_users = pd.concat([df_users, new_admin], ignore_index=True)
+            df_users.to_csv(USERS_CSV, index=False)
+            st.sidebar.success("New admin registered successfully.")
+        else:
+            st.sidebar.error("Please provide both username and password.")
 
-# Financial data inputs
-st.header("General Financial Data")
-revenue = st.number_input("Revenue", min_value=0.0, value=0.0)
-cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0, value=0.0)
-operating_profit = st.number_input("Operating Profit", min_value=0.0, value=0.0)
-net_income = st.number_input("Net Income", min_value=0.0, value=0.0)
-total_assets = st.number_input("Total Assets", min_value=0.0, value=0.0)
-total_liabilities = st.number_input("Total Liabilities", min_value=0.0, value=0.0)
-equity = st.number_input("Equity", min_value=0.0, value=0.0)
-number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0, value=0.0)
+# Main dashboard
+if role:
+    st.title("📊 Financial Ratio & Cash Flow Calculator")
 
-# Cash Flow data
-st.header("Cash Flow Data")
-operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0, value=0.0)
-investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0, value=0.0)
-financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0, value=0.0)
+    company = st.text_input("Company Name", "")
 
-# Banking-specific financial data
-st.header("Banking Financial Data")
-total_loans = st.number_input("Total Loans", min_value=0.0, value=0.0)
-total_deposits = st.number_input("Total Deposits", min_value=0.0, value=0.0)
-non_performing_loans = st.number_input("Non-Performing Loans", min_value=0.0, value=0.0)
+    st.header("General Financial Data")
+    revenue = st.number_input("Revenue", min_value=0.0, value=0.0)
+    cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0, value=0.0)
+    operating_profit = st.number_input("Operating Profit", min_value=0.0, value=0.0)
+    net_income = st.number_input("Net Income", min_value=0.0, value=0.0)
+    total_assets = st.number_input("Total Assets", min_value=0.0, value=0.0)
+    total_liabilities = st.number_input("Total Liabilities", min_value=0.0, value=0.0)
+    equity = st.number_input("Equity", min_value=0.0, value=0.0)
+    number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0, value=0.0)
 
-# Calculate button
-if st.button("📈 Calculate Ratios & Analysis"):
-    gross_profit = revenue - cost_of_goods_sold
-    ratios_data = []
+    st.header("Cash Flow Data")
+    operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0, value=0.0)
+    investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0, value=0.0)
+    financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0, value=0.0)
 
-    # Cash Flows
-    net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
-    ratios_data.append({"Ratio": "Net Cash Flow", "Value": net_cash_flow, "Analysis": "Positive" if net_cash_flow >= 0 else "Negative",
-                        "Implication": "Healthy cash flow" if net_cash_flow >= 0 else "Negative cash movement",
-                        "Advice": "Maintain positive cash flow." if net_cash_flow >= 0 else "Improve cash-generating activities."})
+    st.header("Banking Financial Data")
+    total_loans = st.number_input("Total Loans", min_value=0.0, value=0.0)
+    total_deposits = st.number_input("Total Deposits", min_value=0.0, value=0.0)
+    non_performing_loans = st.number_input("Non-Performing Loans", min_value=0.0, value=0.0)
 
-    # Profitability Ratios
-    if revenue != 0:
-        ratios_data.append({"Ratio": "Gross Profit Margin", "Value": f"{(gross_profit / revenue) * 100:.2f}%", "Analysis": "",
-                            "Implication": "", "Advice": ""})
-        ratios_data.append({"Ratio": "Net Profit Margin", "Value": f"{(net_income / revenue) * 100:.2f}%", "Analysis": "",
-                            "Implication": "", "Advice": ""})
-        ratios_data.append({"Ratio": "Operating Profit Margin", "Value": f"{(operating_profit / revenue) * 100:.2f}%", "Analysis": "",
-                            "Implication": "", "Advice": ""})
+    if st.button("📈 Calculate Ratios & Cash Flows"):
+        gross_profit = revenue - cost_of_goods_sold
+        ratios_data = []
 
-    if total_assets != 0:
-        ratios_data.append({"Ratio": "Return on Assets (ROA)", "Value": f"{(net_income / total_assets) * 100:.2f}%", "Analysis": "",
-                            "Implication": "", "Advice": ""})
+        # Profitability Ratios
+        if revenue != 0:
+            ratios_data.append({"Ratio": "Gross Profit Margin", "Value": f"{(gross_profit / revenue) * 100:.2f}%",
+                                "Analysis": "Higher is better", "Implication": "Shows profitability after production costs",
+                                "Advice": "Increase gross margin by cutting costs or raising revenue"})
+            ratios_data.append({"Ratio": "Net Profit Margin", "Value": f"{(net_income / revenue) * 100:.2f}%",
+                                "Analysis": "Higher is better", "Implication": "Measures bottom-line profitability",
+                                "Advice": "Control costs and boost revenue"})
+            ratios_data.append({"Ratio": "Operating Profit Margin", "Value": f"{(operating_profit / revenue) * 100:.2f}%",
+                                "Analysis": "Higher is better", "Implication": "Efficiency of core operations",
+                                "Advice": "Streamline operational costs"})
 
-    if equity != 0:
-        ratios_data.append({"Ratio": "Return on Equity (ROE)", "Value": f"{(net_income / equity) * 100:.2f}%", "Analysis": "",
-                            "Implication": "", "Advice": ""})
-        ratios_data.append({"Ratio": "Debt to Equity Ratio", "Value": f"{(total_liabilities / equity):.2f}", "Analysis": "",
-                            "Implication": "", "Advice": ""})
+        if total_assets != 0:
+            ratios_data.append({"Ratio": "Return on Assets (ROA)", "Value": f"{(net_income / total_assets) * 100:.2f}%",
+                                "Analysis": "Higher is better", "Implication": "Asset profitability",
+                                "Advice": "Utilize assets more efficiently"})
 
-    if number_of_shares != 0:
-        ratios_data.append({"Ratio": "Earnings per Share (EPS)", "Value": f"{(net_income / number_of_shares):.2f}", "Analysis": "",
-                            "Implication": "", "Advice": ""})
+        if equity != 0:
+            ratios_data.append({"Ratio": "Return on Equity (ROE)", "Value": f"{(net_income / equity) * 100:.2f}%",
+                                "Analysis": "Higher is better", "Implication": "Shareholder profitability",
+                                "Advice": "Improve profit margins or asset efficiency"})
+            ratios_data.append({"Ratio": "Debt to Equity Ratio", "Value": f"{(total_liabilities / equity):.2f}",
+                                "Analysis": "Lower is safer", "Implication": "Financial leverage risk",
+                                "Advice": "Reduce debts or increase equity"})
 
-    # Banking Ratios
-    ldr = total_loans / total_deposits if total_deposits != 0 else 0.0
-    ratios_data.append({"Ratio": "Loan-to-Deposit Ratio (LDR)", "Value": f"{ldr:.2%}", "Analysis": "",
-                        "Implication": "", "Advice": ""})
+        if number_of_shares != 0:
+            ratios_data.append({"Ratio": "Earnings per Share (EPS)", "Value": f"{(net_income / number_of_shares):.2f}",
+                                "Analysis": "Higher is better", "Implication": "Shareholder value",
+                                "Advice": "Boost net income or repurchase shares"})
 
-    npl_ratio = non_performing_loans / total_loans if total_loans != 0 else 0.0
-    ratios_data.append({"Ratio": "Non-Performing Loan (NPL) Ratio", "Value": f"{npl_ratio:.2%}", "Analysis": "",
-                        "Implication": "", "Advice": ""})
+        # Cash Flow Ratios
+        ratios_data.append({"Ratio": "Operating Cash Flow", "Value": f"{operating_cash_flow:,.2f}",
+                            "Analysis": "Higher is healthier", "Implication": "Operating liquidity",
+                            "Advice": "Improve operational cash generation"})
+        ratios_data.append({"Ratio": "Investing Cash Flow", "Value": f"{investing_cash_flow:,.2f}",
+                            "Analysis": "Negative if investing", "Implication": "Capex/Investment activities",
+                            "Advice": "Monitor investment spending"})
+        ratios_data.append({"Ratio": "Financing Cash Flow", "Value": f"{financing_cash_flow:,.2f}",
+                            "Analysis": "Depends on strategy", "Implication": "Debt/Equity financing",
+                            "Advice": "Balance financing methods"})
 
-    # Convert to DataFrame
-    ratios_df = pd.DataFrame(ratios_data)
+        # Banking Ratios
+        ratios_data.append({"Ratio": "Loan-to-Deposit Ratio (LDR)", "Value": f"{(total_loans / total_deposits):.2%}" if total_deposits else "N/A",
+                            "Analysis": "Optimal between 80%-90%", "Implication": "Liquidity risk if too high",
+                            "Advice": "Balance lending and deposits"})
+        ratios_data.append({"Ratio": "Non-Performing Loan (NPL) Ratio", "Value": f"{(non_performing_loans / total_loans):.2%}" if total_loans else "N/A",
+                            "Analysis": "Lower is better", "Implication": "Credit risk exposure",
+                            "Advice": "Tighten credit risk management"})
 
-    # Display results
-    st.subheader(f"📊 Financial Ratios and Analysis for {company if company else 'the Company'}")
-    st.dataframe(ratios_df)
+        # Convert to DataFrame and display
+        ratios_df = pd.DataFrame(ratios_data)
+        st.subheader(f"📊 Financial Ratios for {company if company else 'the Company'}")
+        st.dataframe(ratios_df)
 
-    # CSV Download
-    csv_buffer = BytesIO()
-    ratios_df.to_csv(csv_buffer, index=False)
-    csv_buffer.seek(0)
+        # CSV Download
+        csv_buffer = BytesIO()
+        ratios_df.to_csv(csv_buffer, index=False)
+        csv_buffer.seek(0)
 
-    st.download_button(
-        label="📥 Download Report as CSV",
-        data=csv_buffer,
-        file_name=f"{company.replace(' ', '_')}_financial_analysis.csv" if company else "financial_analysis.csv",
-        mime="text/csv"
-    )
-
-# Display users list for Admin only
-if role == "Admin":
-    st.sidebar.subheader("👥 Registered Users (Admin View)")
-    st.sidebar.dataframe(users_df)
-
+        st.download_button(
+            label="📥 Download Ratios as CSV",
+            data=csv_buffer,
+            file_name=f"{company.replace(' ', '_')}_financial_ratios.csv" if company else "financial_ratios.csv",
+            mime="text/csv"
+        )
+else:
+    st.warning("Please log in to access the financial dashboard.")
