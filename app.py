@@ -7,8 +7,8 @@ import os
 USERS_CSV = 'users.csv'
 
 # Predefined admin credentials
-ADMIN_EMAIL = 'admin@example.com'
-ADMIN_PASSWORD = 'admin123'
+ADMIN_EMAIL = 'seedtimecapital@gmail.com'
+ADMIN_PASSWORD = 'admin1234'
 
 # Initialize users CSV if not exists
 if not os.path.exists(USERS_CSV):
