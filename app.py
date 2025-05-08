@@ -20,7 +20,7 @@ if not st.session_state["logged_in"]:
     if login_clicked:
         if check_login(username, password):
             st.session_state["logged_in"] = True
-            st.experimental_rerun()  # refresh to load dashboard
+            st.rerun()  # refresh to load dashboard
         else:
             st.error("❌ Invalid username or password.")
 
