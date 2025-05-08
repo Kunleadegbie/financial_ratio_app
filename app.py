@@ -150,6 +150,6 @@ elif choice == "Admin":
                     if st.button(f"Approve", key=row['username']):
                         approve_user(row['username'])
                         st.success(f"{row['username']} approved.")
-                        st.experimental_rerun()  # Refresh to update list
+                        st.rerun()  # Refresh to update list
         else:
             st.info("No pending users.")
