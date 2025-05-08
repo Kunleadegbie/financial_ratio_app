@@ -1,155 +1,104 @@
 import streamlit as st
 import pandas as pd
-import csv
-import os
+from io import BytesIO
 
-# Admin credentials
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "adminpass"
+# Simple admin authentication
+def check_password():
+    def password_entered():
+        if (st.session_state["username"] == "admin"
+                and st.session_state["password"] == "12345"):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]
+            del st.session_state["username"]
+        else:
+            st.session_state["password_correct"] = False
 
-USERS_FILE = "users.csv"
-
-# Create users file if not exists
-if not os.path.exists(USERS_FILE):
-    with open(USERS_FILE, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(["username", "status"])
-
-# Check user status
-def check_user(username):
-    df = pd.read_csv(USERS_FILE)
-    if username in df['username'].values:
-        return df.loc[df['username'] == username, 'status'].values[0]
+    if "password_correct" not in st.session_state:
+        st.text_input("Username", key="username")
+        st.text_input("Password", type="password", key="password")
+        st.button("Login", on_click=password_entered)
+        return False
+    elif not st.session_state["password_correct"]:
+        st.error("Invalid credentials")
+        return False
     else:
-        return "new"
+        return True
 
-# Approve user
-def approve_user(username):
-    df = pd.read_csv(USERS_FILE)
-    df.loc[df['username'] == username, 'status'] = 'approved'
-    df.to_csv(USERS_FILE, index=False)
+if check_password():
+    st.title("📊 Financial Ratio & Cash Flow Calculator")
 
-# Initialize session state variables
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = ""
-if 'admin_logged_in' not in st.session_state:
-    st.session_state.admin_logged_in = False
+    company = st.text_input("Company Name", "")
 
-# App title
-st.title("📊 Financial Ratio Analyzer")
+    # Financial data inputs
+    revenue = st.number_input("Revenue", min_value=0.0, value=0.0)
+    cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0, value=0.0)
+    operating_profit = st.number_input("Operating Profit", min_value=0.0, value=0.0)
+    net_income = st.number_input("Net Income", min_value=0.0, value=0.0)
+    total_assets = st.number_input("Total Assets", min_value=0.0, value=0.0)
+    total_liabilities = st.number_input("Total Liabilities", min_value=0.0, value=0.0)
+    equity = st.number_input("Equity", min_value=0.0, value=0.0)
+    number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0, value=0.0)
 
-# Sidebar Menu
-menu = ["Login", "Admin"]
-choice = st.sidebar.selectbox("Menu", menu)
+    operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0, value=0.0)
+    investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0, value=0.0)
+    financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0, value=0.0)
 
-if choice == "Login":
-    st.subheader("User Login")
-    username = st.text_input("Username")
+    # Banking-specific inputs
+    st.subheader("📌 Banking & Financial Institution Inputs")
+    total_loans = st.number_input("Total Loans", min_value=0.0, value=0.0)
+    total_deposits = st.number_input("Total Deposits", min_value=0.0, value=0.0)
+    high_quality_liquid_assets = st.number_input("High-Quality Liquid Assets", min_value=0.0, value=0.0)
+    net_cash_outflows_30d = st.number_input("Total Net Cash Outflows (30 days)", min_value=0.0, value=0.0)
+    available_stable_funding = st.number_input("Available Stable Funding", min_value=0.0, value=0.0)
+    required_stable_funding = st.number_input("Required Stable Funding", min_value=0.0, value=0.0)
+    non_performing_loans = st.number_input("Non-Performing Loans", min_value=0.0, value=0.0)
+    loan_loss_reserves = st.number_input("Loan Loss Reserves", min_value=0.0, value=0.0)
+    net_interest_income = st.number_input("Net Interest Income", min_value=0.0, value=0.0)
+    average_earning_assets = st.number_input("Average Earning Assets", min_value=0.0, value=0.0)
+    operating_income = st.number_input("Operating Income", min_value=0.0, value=0.0)
+    staff_costs = st.number_input("Staff Costs", min_value=0.0, value=0.0)
+    tier1_capital = st.number_input("Tier 1 Capital", min_value=0.0, value=0.0)
+    tier2_capital = st.number_input("Tier 2 Capital", min_value=0.0, value=0.0)
+    risk_weighted_assets = st.number_input("Risk-Weighted Assets", min_value=0.0, value=0.0)
+    total_assets_bank = st.number_input("Total Assets (for Leverage Ratio)", min_value=0.0, value=0.0)
+    dividends = st.number_input("Dividends", min_value=0.0, value=0.0)
+    net_open_position = st.number_input("Net Open Position (Forex Exposure)", min_value=0.0, value=0.0)
+    capital_base = st.number_input("Capital Base (for Forex Exposure)", min_value=0.0, value=0.0)
+    book_value = st.number_input("Book Value", min_value=0.0, value=0.0)
 
-    if st.button("Login"):
-        status = check_user(username)
-        if status == "approved":
-            st.session_state.logged_in = True
-            st.session_state.current_user = username
-            st.success(f"Welcome back, {username}")
-        elif status == "pending":
-            st.warning("Your account is awaiting admin approval.")
-        else:
-            with open(USERS_FILE, mode='a', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([username, "pending"])
-            st.info("First time login as Free Trial. Awaiting admin approval.")
+    # Ratio calculations
+    ratios = {}
 
-# 📊 Financial Ratio Dashboard for logged-in users
-if st.session_state.logged_in and choice == "Login":
-    st.header(f"Financial Ratio Dashboard for {st.session_state.current_user}")
+    try:
+        ratios["Gross Profit Margin (%)"] = ((revenue - cost_of_goods_sold) / revenue) * 100 if revenue else 0
+        ratios["Net Profit Margin (%)"] = (net_income / revenue) * 100 if revenue else 0
+        ratios["Operating Profit Margin (%)"] = (operating_profit / revenue) * 100 if revenue else 0
+        ratios["Return on Assets (ROA) (%)"] = (net_income / total_assets) * 100 if total_assets else 0
+        ratios["Return on Equity (ROE) (%)"] = (net_income / equity) * 100 if equity else 0
+        ratios["Debt to Equity Ratio"] = (total_liabilities / equity) if equity else 0
+        ratios["Earnings per Share (EPS)"] = (net_income / number_of_shares) if number_of_shares else 0
+        ratios["Loan-to-Deposit Ratio (LDR) (%)"] = (total_loans / total_deposits) * 100 if total_deposits else 0
+        ratios["Liquidity Coverage Ratio (LCR) (%)"] = (high_quality_liquid_assets / net_cash_outflows_30d) * 100 if net_cash_outflows_30d else 0
+        ratios["Net Stable Funding Ratio (NSFR) (%)"] = (available_stable_funding / required_stable_funding) * 100 if required_stable_funding else 0
+        ratios["Non-Performing Loan (NPL) Ratio (%)"] = (non_performing_loans / total_loans) * 100 if total_loans else 0
+        ratios["Cost-to-Income Ratio (%)"] = (staff_costs / operating_income) * 100 if operating_income else 0
+        ratios["Capital Adequacy Ratio (CAR) (%)"] = ((tier1_capital + tier2_capital) / risk_weighted_assets) * 100 if risk_weighted_assets else 0
+        ratios["Leverage Ratio (%)"] = (tier1_capital / total_assets_bank) * 100 if total_assets_bank else 0
+        ratios["Dividend Payout Ratio (%)"] = (dividends / net_income) * 100 if net_income else 0
+        ratios["Net Interest Margin (NIM) (%)"] = (net_interest_income / average_earning_assets) * 100 if average_earning_assets else 0
+        ratios["Forex Exposure Ratio (%)"] = (net_open_position / capital_base) * 100 if capital_base else 0
+        ratios["Book Value per Share"] = (book_value / number_of_shares) if number_of_shares else 0
+    except ZeroDivisionError:
+        st.error("Division by zero encountered in calculation.")
 
-    total_assets = st.number_input("Total Assets", min_value=0.0)
-    total_liabilities = st.number_input("Total Liabilities", min_value=0.0)
-    inventory = st.number_input("Inventory", min_value=0.0)
-    cash = st.number_input("Cash", min_value=0.0)
-    operating_cf = st.number_input("Operating Cash Flow", min_value=0.0)
-    investing_cf = st.number_input("Investing Cash Flow", min_value=0.0)
-    financing_cf = st.number_input("Financing Cash Flow", min_value=0.0)
+    st.subheader("📈 Financial Ratios")
+    st.write(pd.DataFrame.from_dict(ratios, orient='index', columns=["Value (%)"]).round(2))
 
-    if st.button("Calculate Ratios"):
+    # Download as Excel
+    if st.button("📥 Download Results as Excel"):
+        output = BytesIO()
+        df = pd.DataFrame.from_dict(ratios, orient='index', columns=["Value (%)"]).round(2)
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, sheet_name='Financial Ratios')
+        st.download_button(label="Download Excel File", data=output.getvalue(), file_name=f"{company}_financial_ratios.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-        results = []
-
-        def analyze_ratio(name, value, good_range, advice_good, advice_bad):
-            analysis = "Good" if good_range[0] <= value <= good_range[1] else "Needs Attention"
-            implication = "Healthy financial position." if analysis == "Good" else "Potential liquidity risk."
-            advice = advice_good if analysis == "Good" else advice_bad
-            return [name, round(value, 2), analysis, implication, advice]
-
-        if total_liabilities != 0:
-            current_ratio = total_assets / total_liabilities
-            results.append(analyze_ratio("Current Ratio", current_ratio, (1.5, 3),
-                                         "Maintain current strategy.",
-                                         "Improve liquidity or reduce liabilities."))
-
-            quick_ratio = (total_assets - inventory) / total_liabilities
-            results.append(analyze_ratio("Quick Ratio", quick_ratio, (1, 2),
-                                         "Strong quick assets position.",
-                                         "Increase liquid assets or pay down liabilities."))
-
-            cash_ratio = cash / total_liabilities
-            results.append(analyze_ratio("Cash Ratio", cash_ratio, (0.5, 1),
-                                         "Good immediate liquidity.",
-                                         "Consider improving immediate cash reserves."))
-        else:
-            st.warning("Total Liabilities cannot be zero for ratio calculations.")
-
-        net_cash_flow = operating_cf + investing_cf + financing_cf
-        results.append(analyze_ratio("Net Cash Flow", net_cash_flow, (0, float('inf')),
-                                     "Positive cash flow maintained.",
-                                     "Review operational and financing activities."))
-
-        df = pd.DataFrame(results, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
-        st.dataframe(df)
-
-        # Save to CSV
-        csv_path = "financial_ratios.csv"
-        df.to_csv(csv_path, index=False)
-        st.success("Results saved to financial_ratios.csv")
-
-        # CSV download button
-        with open(csv_path, "rb") as file:
-            st.download_button(
-                label="📥 Download Result CSV",
-                data=file,
-                file_name="financial_ratios.csv",
-                mime="text/csv"
-            )
-
-elif choice == "Admin":
-    st.subheader("Admin Panel")
-    admin_user = st.text_input("Admin Username")
-    admin_pass = st.text_input("Admin Password", type='password')
-
-    if st.button("Login as Admin"):
-        if admin_user == ADMIN_USERNAME and admin_pass == ADMIN_PASSWORD:
-            st.success("Admin logged in.")
-            st.session_state.admin_logged_in = True
-        else:
-            st.error("Invalid admin credentials.")
-
-    if st.session_state.admin_logged_in:
-        st.subheader("Pending User Approvals")
-        df_users = pd.read_csv(USERS_FILE)
-        pending_users = df_users[df_users['status'] == 'pending']
-
-        if not pending_users.empty:
-            for idx, row in pending_users.iterrows():
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"Username: {row['username']}")
-                with col2:
-                    if st.button(f"Approve", key=row['username']):
-                        approve_user(row['username'])
-                        st.success(f"{row['username']} approved.")
-                        st.rerun()  # Refresh to update list
-        else:
-            st.info("No pending users.")
