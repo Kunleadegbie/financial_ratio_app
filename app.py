@@ -1,125 +1,155 @@
 import streamlit as st
 import pandas as pd
-import datetime
 from io import BytesIO
 
-# App config
-st.set_page_config(page_title="📊 Financial Ratio & Cash Flow Calculator", page_icon="📊", layout="centered")
+# Set app title
+st.title("📊 Financial & Banking Ratio Analysis App")
 
-# User database (in a real app, use a database)
+# In-memory 'database' for users and approvals
 if 'users' not in st.session_state:
-    st.session_state.users = {'admin': {'password': '12345', 'approved': True}}  # admin user
+    st.session_state.users = {'admin': 'admin123', 'free_trial': 'trial123'}
+if 'approved_users' not in st.session_state:
+    st.session_state.approved_users = []
 
-if 'free_trial_log' not in st.session_state:
-    st.session_state.free_trial_log = {}
+# Login form
+with st.expander("🔐 Login"):
+    username = st.text_input("Username")
+    password = st.text_input("Password", type='password')
+    login_button = st.button("Login")
 
-# Authentication
-st.sidebar.title("🔐 Login")
-username = st.sidebar.text_input("Username")
-password = st.sidebar.text_input("Password", type="password")
-login_button = st.sidebar.button("Login")
+# Session authentication state
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+if 'current_user' not in st.session_state:
+    st.session_state.current_user = None
 
-user_authenticated = False
-is_admin = False
-
+# Login validation
 if login_button:
-    if username in st.session_state.users:
-        if st.session_state.users[username]['password'] == password:
-            if st.session_state.users[username]['approved']:
-                st.sidebar.success(f"Welcome {username}!")
-                user_authenticated = True
-                if username == 'admin':
-                    is_admin = True
+    if username in st.session_state.users and st.session_state.users[username] == password:
+        if username == "free_trial":
+            if username in st.session_state.approved_users:
+                st.success("Login successful as approved user.")
+                st.session_state.authenticated = True
+                st.session_state.current_user = username
             else:
-                st.sidebar.warning("Awaiting admin approval.")
+                st.info("Free trial login successful. You need admin approval for next login.")
+                st.session_state.approved_users.append(username)
+                st.session_state.authenticated = True
+                st.session_state.current_user = username
         else:
-            st.sidebar.error("Incorrect password.")
+            st.success(f"Welcome {username}!")
+            st.session_state.authenticated = True
+            st.session_state.current_user = username
     else:
-        # Free trial logic
-        if username not in st.session_state.free_trial_log:
-            st.session_state.free_trial_log[username] = {'used': True}
-            st.session_state.users[username] = {'password': password, 'approved': True}  # Allow first time login
-            st.sidebar.success(f"Free trial granted. Welcome {username}!")
-            user_authenticated = True
-        else:
-            st.sidebar.warning("Free trial expired. Awaiting admin approval.")
+        st.error("Invalid username or password.")
 
-# Admin panel
-if is_admin:
-    st.sidebar.title("🛠️ Admin Panel")
-    st.sidebar.write("## Pending Approvals")
-    for user in st.session_state.users:
-        if not st.session_state.users[user]['approved']:
-            if st.sidebar.button(f"Approve {user}"):
-                st.session_state.users[user]['approved'] = True
-                st.sidebar.success(f"{user} approved!")
+# If authenticated, show the app
+if st.session_state.authenticated:
 
-# Main app logic after login
-if user_authenticated:
-    st.title("📊 Financial Ratio & Cash Flow Calculator")
-    st.markdown("Calculate key financial ratios and cash flows based on your input figures.")
+    st.header("📑 Enter Financial Data")
 
-    company = st.text_input("Company Name", "")
+    def num_input(label):
+        return st.number_input(label, min_value=0.0, value=st.session_state.get(label, 0.0), key=label)
 
-    # Financial data inputs
-    revenue = st.number_input("Revenue", min_value=0.0, value=0.0)
-    cost_of_goods_sold = st.number_input("Cost of Goods Sold", min_value=0.0, value=0.0)
-    operating_profit = st.number_input("Operating Profit", min_value=0.0, value=0.0)
-    net_income = st.number_input("Net Income", min_value=0.0, value=0.0)
-    total_assets = st.number_input("Total Assets", min_value=0.0, value=0.0)
-    total_liabilities = st.number_input("Total Liabilities", min_value=0.0, value=0.0)
-    equity = st.number_input("Equity", min_value=0.0, value=0.0)
-    number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0, value=0.0)
+    company = st.text_input("Company Name")
 
-    # Cash Flow data
-    operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0, value=0.0)
-    investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0, value=0.0)
-    financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0, value=0.0)
+    revenue = num_input("Revenue")
+    cost_of_goods_sold = num_input("Cost of Goods Sold")
+    operating_profit = num_input("Operating Profit")
+    net_income = num_input("Net Income")
+    total_assets = num_input("Total Assets")
+    total_liabilities = num_input("Total Liabilities")
+    equity = num_input("Equity")
+    number_of_shares = num_input("Number of Shares Outstanding")
+    operating_cash_flow = num_input("Operating Cash Flow")
+    investing_cash_flow = num_input("Investing Cash Flow")
+    financing_cash_flow = num_input("Financing Cash Flow")
 
-    # Bank-specific inputs
-    st.subheader("📌 Additional Banking Inputs")
-    total_loans = st.number_input("Total Loans", min_value=0.0, value=0.0)
-    total_deposits = st.number_input("Total Deposits", min_value=0.0, value=0.0)
-    high_quality_liquid_assets = st.number_input("High-Quality Liquid Assets", min_value=0.0, value=0.0)
-    net_cash_outflows_30d = st.number_input("Net Cash Outflows (30 days)", min_value=0.0, value=0.0)
-    available_stable_funding = st.number_input("Available Stable Funding", min_value=0.0, value=0.0)
-    required_stable_funding = st.number_input("Required Stable Funding", min_value=0.0, value=0.0)
+    st.subheader("📌 Banking-specific Inputs")
+
+    total_loans = num_input("Total Loans")
+    total_deposits = num_input("Total Deposits")
+    high_quality_liquid_assets = num_input("High-Quality Liquid Assets")
+    net_cash_outflows_30d = num_input("Net Cash Outflows (30 days)")
+    available_stable_funding = num_input("Available Stable Funding")
+    required_stable_funding = num_input("Required Stable Funding")
+    non_performing_loans = num_input("Non-Performing Loans")
+    loan_loss_reserves = num_input("Loan Loss Reserves")
+    net_interest_income = num_input("Net Interest Income")
+    average_earning_assets = num_input("Average Earning Assets")
+    operating_income = num_input("Operating Income")
+    staff_costs = num_input("Staff Costs")
+    tier1_capital = num_input("Tier 1 Capital")
+    tier2_capital = num_input("Tier 2 Capital")
+    risk_weighted_assets = num_input("Risk-Weighted Assets")
+    total_assets_bank = num_input("Total Assets (for Leverage Ratio)")
+    dividends = num_input("Dividends")
+    net_open_position = num_input("Net Open Position (Forex Exposure)")
+    capital_base = num_input("Capital Base (for Forex Exposure)")
+    book_value = num_input("Book Value")
 
     if st.button("📈 Calculate Ratios"):
         gross_profit = revenue - cost_of_goods_sold
-        ratios_data = []
+        data = []
 
+        # Insight dictionary for interpretation
         insights = {
-            "Gross Profit Margin": ("Measures profitability after direct costs.", "Higher is better; ensures core profitability.", "Improve pricing or reduce production costs."),
-            "Net Profit Margin": ("Shows net profitability after all expenses.", "Low margins indicate high overhead or costs.", "Control operating expenses and debts."),
-            "Operating Profit Margin": ("Reflects operational efficiency.", "Higher is preferred; operationally sound.", "Streamline operations and cut unnecessary costs."),
-            "Return on Assets (ROA)": ("Measures asset efficiency in generating profit.", "Higher ratio signifies efficient asset use.", "Dispose underperforming assets, reinvest wisely."),
-            "Return on Equity (ROE)": ("Shows return on shareholders' investment.", "High ROE implies good capital utilization.", "Increase retained earnings and effective leverage."),
-            "Debt to Equity Ratio": ("Measures financial leverage.", "Too high indicates potential risk.", "Maintain optimal debt levels."),
-            "Earnings per Share (EPS)": ("Indicates profitability per share.", "Higher EPS attracts investors.", "Boost net income or reduce shares."),
-            "Loan-to-Deposit Ratio (LDR)": ("Measures liquidity and lending aggressiveness.", "Over 100% risky, under 80% too conservative.", "Balance between loans and deposits."),
-            "Liquidity Coverage Ratio (LCR)": ("Ensures short-term liquidity.", "Under 100% signals risk.", "Maintain adequate high-quality assets."),
-            "Net Stable Funding Ratio (NSFR)": ("Assesses medium-term stability.", "Below 100% is weak.", "Boost stable funding sources."),
+            "Gross Profit Margin": ("Measures profitability after COGS. High is better.", "Higher margin means better pricing power and cost control.", "Monitor trends to maintain healthy margins."),
+            "Net Profit Margin": ("Bottom-line profitability. High is healthy.", "A high value indicates operational efficiency.", "Increase sales or reduce expenses."),
+            "Operating Profit Margin": ("Profit before taxes & interest. Reflects core ops.", "Higher margins show strong core operations.", "Improve operational efficiency."),
+            "Return on Assets (ROA)": ("Profit generated per asset unit.", "Higher indicates efficient asset use.", "Manage assets productively."),
+            "Return on Equity (ROE)": ("Return generated on shareholders' funds.", "Higher ROE attracts investors.", "Boost profitability or manage equity."),
+            "Debt to Equity Ratio": ("Measures leverage. Lower is safer.", "High ratio means greater financial risk.", "Balance debt and equity financing."),
+            "Earnings per Share (EPS)": ("Profit per outstanding share.", "Higher EPS benefits shareholders.", "Focus on consistent growth."),
+            "Operating Cash Flow": ("Cash generated from operations.", "Positive OCF is vital for sustainability.", "Monitor liquidity."),
+            "Investing Cash Flow": ("Cash from investments.", "Negative typically means expansion.", "Ensure wise investment decisions."),
+            "Financing Cash Flow": ("Cash from financing activities.", "Shows how operations are funded.", "Balance equity and debt sources."),
+            "Loan-to-Deposit Ratio (LDR)": ("Shows lending aggressiveness.", "High ratio may mean liquidity strain.", "Maintain optimal LDR for stability."),
+            "Liquidity Coverage Ratio (LCR)": ("Measures liquidity for 30-day stress.", "Over 100% means good resilience.", "Manage liquid asset levels."),
+            "Net Stable Funding Ratio (NSFR)": ("Measures long-term funding stability.", "Over 100% ensures sustainable funding.", "Align stable funding sources."),
+            "Non-Performing Loan (NPL) Ratio": ("Shows bad loans proportion.", "Lower ratio is healthier.", "Strengthen credit risk management."),
         }
 
+        # Cash Flows
+        data.append(["Operating Cash Flow", f"{operating_cash_flow:.2f}", *insights["Operating Cash Flow"]])
+        data.append(["Investing Cash Flow", f"{investing_cash_flow:.2f}", *insights["Investing Cash Flow"]])
+        data.append(["Financing Cash Flow", f"{financing_cash_flow:.2f}", *insights["Financing Cash Flow"]])
+
+        # Profitability Ratios
         if revenue:
-            value = (gross_profit / revenue) * 100
-            a, i, ad = insights["Gross Profit Margin"]
-            ratios_data.append(["Gross Profit Margin", f"{value:.2f}%", a, i, ad])
+            data.append(["Gross Profit Margin", f"{(gross_profit/revenue)*100:.2f}%", *insights["Gross Profit Margin"]])
+            data.append(["Net Profit Margin", f"{(net_income/revenue)*100:.2f}%", *insights["Net Profit Margin"]])
+            data.append(["Operating Profit Margin", f"{(operating_profit/revenue)*100:.2f}%", *insights["Operating Profit Margin"]])
 
+        if total_assets:
+            data.append(["Return on Assets (ROA)", f"{(net_income/total_assets)*100:.2f}%", *insights["Return on Assets (ROA)"]])
+
+        if equity:
+            data.append(["Return on Equity (ROE)", f"{(net_income/equity)*100:.2f}%", *insights["Return on Equity (ROE)"]])
+            data.append(["Debt to Equity Ratio", f"{(total_liabilities/equity):.2f}", *insights["Debt to Equity Ratio"]])
+
+        if number_of_shares:
+            data.append(["Earnings per Share (EPS)", f"{(net_income/number_of_shares):.2f}", *insights["Earnings per Share (EPS)"]])
+
+        # Banking Ratios
         if total_deposits:
-            value = (total_loans / total_deposits) * 100
-            a, i, ad = insights["Loan-to-Deposit Ratio (LDR)"]
-            ratios_data.append(["Loan-to-Deposit Ratio (LDR)", f"{value:.2f}%", a, i, ad])
+            data.append(["Loan-to-Deposit Ratio (LDR)", f"{(total_loans/total_deposits)*100:.2f}%", *insights["Loan-to-Deposit Ratio (LDR)"]])
 
-        # Add similar blocks for the rest as needed using insights dict
+        if net_cash_outflows_30d:
+            data.append(["Liquidity Coverage Ratio (LCR)", f"{(high_quality_liquid_assets/net_cash_outflows_30d)*100:.2f}%", *insights["Liquidity Coverage Ratio (LCR)"]])
 
-        df = pd.DataFrame(ratios_data, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
+        if required_stable_funding:
+            data.append(["Net Stable Funding Ratio (NSFR)", f"{(available_stable_funding/required_stable_funding)*100:.2f}%", *insights["Net Stable Funding Ratio (NSFR)"]])
+
+        if total_loans:
+            data.append(["Non-Performing Loan (NPL) Ratio", f"{(non_performing_loans/total_loans)*100:.2f}%", *insights["Non-Performing Loan (NPL) Ratio"]])
+
+        # Show DataFrame
+        df = pd.DataFrame(data, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
         st.dataframe(df)
 
-        # CSV download
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button(label="📥 Download Results as CSV", data=csv, file_name=f'{company}_financial_ratios.csv', mime='text/csv')
+        # CSV Download
+        csv_buffer = BytesIO()
+        df.to_csv(csv_buffer, index=False)
+        st.download_button("📥 Download Results as CSV", csv_buffer.getvalue(), file_name=f"{company}_Financial_Analysis.csv", mime="text/csv")
 
-else:
-    st.warning("Please log in to access the financial calculator.")
