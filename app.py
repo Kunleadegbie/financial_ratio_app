@@ -2,32 +2,22 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# ✅ Replace this with your preferred admin authentication
-def check_password():
-    def password_entered():
-        if (st.session_state["username"] == "admin"
-                and st.session_state["password"] == "12345"):
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]
-            del st.session_state["username"]
-        else:
-            st.session_state["password_correct"] = False
+# Simple login system
+def check_login(username, password):
+    return username == "chumcred" and password == "1234"
 
-    if "password_correct" not in st.session_state:
-        st.text_input("Username", key="username")
-        st.text_input("Password", type="password", key="password")
-        st.button("Login", on_click=password_entered)
-        return False
-    elif not st.session_state["password_correct"]:
-        st.error("Invalid credentials")
-        return False
-    else:
-        return True
+# Login inputs
+st.title("🔐 Login to Financial Dashboard")
+username = st.text_input("Username")
+password = st.text_input("Password", type="password")
 
-# ✅ If logged in, show the app
-if check_password():
+if check_login(username, password):
+
+    # App title and header
     st.title("📊 Financial Ratio & Cash Flow Calculator")
+    st.markdown("Calculate key financial ratios and cash flows based on your input figures.")
 
+    # User inputs
     company = st.text_input("Company Name", "")
 
     # Financial data inputs
@@ -38,17 +28,15 @@ if check_password():
     total_assets = st.number_input("Total Assets", min_value=0.0, value=0.0)
     total_liabilities = st.number_input("Total Liabilities", min_value=0.0, value=0.0)
     equity = st.number_input("Equity", min_value=0.0, value=0.0)
-    current_assets = st.number_input("Current Assets", min_value=0.0, value=0.0)
-    current_liabilities = st.number_input("Current Liabilities", min_value=0.0, value=0.0)
-    inventory = st.number_input("Inventory", min_value=0.0, value=0.0)
     number_of_shares = st.number_input("Number of Shares Outstanding", min_value=0.0, value=0.0)
 
+    # Cash Flow data
     operating_cash_flow = st.number_input("Operating Cash Flow", min_value=0.0, value=0.0)
     investing_cash_flow = st.number_input("Investing Cash Flow", min_value=0.0, value=0.0)
     financing_cash_flow = st.number_input("Financing Cash Flow", min_value=0.0, value=0.0)
 
-    # Banking-specific inputs
-    st.subheader("📌 Banking & Financial Institution Inputs")
+    # Additional Bank-specific inputs
+    st.subheader("📌 Additional Banking & Financial Institution Inputs")
     total_loans = st.number_input("Total Loans", min_value=0.0, value=0.0)
     total_deposits = st.number_input("Total Deposits", min_value=0.0, value=0.0)
     high_quality_liquid_assets = st.number_input("High-Quality Liquid Assets", min_value=0.0, value=0.0)
@@ -70,36 +58,50 @@ if check_password():
     capital_base = st.number_input("Capital Base (for Forex Exposure)", min_value=0.0, value=0.0)
     book_value = st.number_input("Book Value", min_value=0.0, value=0.0)
 
-    # Ratio calculations
-    ratios = {}
+    # Button to calculate ratios
+    if st.button("📈 Calculate Ratios & Cash Flows"):
 
-    try:
-        ratios["Gross Profit Margin (%)"] = ((revenue - cost_of_goods_sold) / revenue) * 100 if revenue else 0
-        ratios["Net Profit Margin (%)"] = (net_income / revenue) * 100 if revenue else 0
-        ratios["Operating Profit Margin (%)"] = (operating_profit / revenue) * 100 if revenue else 0
-        ratios["Return on Assets (ROA) (%)"] = (net_income / total_assets) * 100 if total_assets else 0
-        ratios["Return on Equity (ROE) (%)"] = (net_income / equity) * 100 if equity else 0
-        ratios["Debt to Equity Ratio"] = (total_liabilities / equity) if equity else 0
-        ratios["Earnings per Share (EPS)"] = (net_income / number_of_shares) if number_of_shares else 0
-        ratios["Current Ratio"] = (current_assets / current_liabilities) if current_liabilities else 0
-        ratios["Quick Ratio (Acid Test)"] = ((current_assets - inventory) / current_liabilities) if current_liabilities else 0
-        ratios["Loan-to-Deposit Ratio (LDR) (%)"] = (total_loans / total_deposits) * 100 if total_deposits else 0
-        ratios["Liquidity Coverage Ratio (LCR) (%)"] = (high_quality_liquid_assets / net_cash_outflows_30d) * 100 if net_cash_outflows_30d else 0
-        ratios["Net Stable Funding Ratio (NSFR) (%)"] = (available_stable_funding / required_stable_funding) * 100 if required_stable_funding else 0
-        ratios["Non-Performing Loan (NPL) Ratio (%)"] = (non_performing_loans / total_loans) * 100 if total_loans else 0
-        ratios["Cost-to-Income Ratio (%)"] = (staff_costs / operating_income) * 100 if operating_income else 0
-        ratios["Capital Adequacy Ratio (CAR) (%)"] = ((tier1_capital + tier2_capital) / risk_weighted_assets) * 100 if risk_weighted_assets else 0
-        ratios["Leverage Ratio (%)"] = (tier1_capital / total_assets_bank) * 100 if total_assets_bank else 0
-        ratios["Dividend Payout Ratio (%)"] = (dividends / net_income) * 100 if net_income else 0
-        ratios["Net Interest Margin (NIM) (%)"] = (net_interest_income / average_earning_assets) * 100 if average_earning_assets else 0
-        ratios["Forex Exposure Ratio (%)"] = (net_open_position / capital_base) * 100 if capital_base else 0
-        ratios["Price-to-Book Ratio (P/B)"] = (book_value / equity) if equity else 0
+        gross_profit = revenue - cost_of_goods_sold
+        ratios_data = []
 
-    except Exception as e:
-        st.error(f"An error occurred in calculations: {e}")
+        # Cash Flows
+        ratios_data.append({"Ratio": "Operating Cash Flow", "Value": f"{operating_cash_flow:.2f}", "Analysis": "", "Implication": "", "Advice": ""})
+        ratios_data.append({"Ratio": "Investing Cash Flow", "Value": f"{investing_cash_flow:.2f}", "Analysis": "", "Implication": "", "Advice": ""})
+        ratios_data.append({"Ratio": "Financing Cash Flow", "Value": f"{financing_cash_flow:.2f}", "Analysis": "", "Implication": "", "Advice": ""})
 
-    st.subheader("📈 Calculated Financial Ratios")
+        # Profitability Ratios
+        if revenue:
+            ratios_data.append({"Ratio": "Gross Profit Margin", "Value": f"{(gross_profit / revenue) * 100:.2f}%", "Analysis": "", "Implication": "", "Advice": ""})
+            ratios_data.append({"Ratio": "Net Profit Margin", "Value": f"{(net_income / revenue) * 100:.2f}%", "Analysis": "", "Implication": "", "Advice": ""})
+            ratios_data.append({"Ratio": "Operating Profit Margin", "Value": f"{(operating_profit / revenue) * 100:.2f}%", "Analysis": "", "Implication": "", "Advice": ""})
 
-    for key, value in ratios.items():
-        st.write(f"**{key}:** {value:.2f}")
+        if total_assets:
+            ratios_data.append({"Ratio": "Return on Assets (ROA)", "Value": f"{(net_income / total_assets) * 100:.2f}%", "Analysis": "", "Implication": "", "Advice": ""})
 
+        if equity:
+            ratios_data.append({"Ratio": "Return on Equity (ROE)", "Value": f"{(net_income / equity) * 100:.2f}%", "Analysis": "", "Implication": "", "Advice": ""})
+            ratios_data.append({"Ratio": "Debt to Equity Ratio", "Value": f"{(total_liabilities / equity):.2f}", "Analysis": "", "Implication": "", "Advice": ""})
+
+        if number_of_shares:
+            ratios_data.append({"Ratio": "Earnings per Share (EPS)", "Value": f"{(net_income / number_of_shares):.2f}", "Analysis": "", "Implication": "", "Advice": ""})
+
+        # Liquidity Ratios
+        if total_liabilities:
+            ratios_data.append({"Ratio": "Current Ratio", "Value": f"{(total_assets / total_liabilities):.2f}", "Analysis": "", "Implication": "", "Advice": ""})
+            ratios_data.append({"Ratio": "Quick Ratio", "Value": f"{(total_assets / total_liabilities):.2f}", "Analysis": "", "Implication": "", "Advice": ""})
+            ratios_data.append({"Ratio": "Cash Ratio", "Value": f"{(operating_cash_flow / total_liabilities):.2f}", "Analysis": "", "Implication": "", "Advice": ""})
+
+        net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
+        ratios_data.append({"Ratio": "Net Cash Flow", "Value": f"{net_cash_flow:.2f}", "Analysis": "", "Implication": "", "Advice": ""})
+
+        # Display the data
+        df = pd.DataFrame(ratios_data)
+        st.subheader(f"📊 Financial Ratios & Cash Flow for {company}")
+        st.dataframe(df)
+
+        # Download CSV
+        csv = df.to_csv(index=False).encode()
+        st.download_button("📥 Download CSV Report", data=csv, file_name=f"{company}_financial_ratios.csv", mime='text/csv')
+
+else:
+    st.warning("Please enter your login credentials to access the dashboard.")
