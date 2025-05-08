@@ -7,9 +7,6 @@ import pandas as pd
 
 # Your app logic starts here
 if st.button("📈 Calculate Ratios & Cash Flows"):
-    # rest of your ratio computation logic
-
-if st.button("📈 Calculate Ratios & Cash Flows"):
     gross_profit = revenue - cost_of_goods_sold
     net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow
 
