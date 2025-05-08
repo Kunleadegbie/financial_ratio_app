@@ -9,9 +9,9 @@ menu = ["Home", "Admin"]
 choice = st.sidebar.selectbox("Navigation", menu)
 
 # Dummy user authentication (can be replaced with real logic)
-users = {"admin": "chumcred@gmail.com", "user": "CHUMCRED"}
-
+users = {"admin": "password123", "user": "userpass"}
 # Admin page
+
 if choice == "Admin":
     st.subheader("👨‍💼 Admin Panel")
     username = st.text_input("Username")
