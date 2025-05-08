@@ -3,13 +3,13 @@ import pandas as pd
 import csv
 import os
 
-# Admin login credentials
+# Admin credentials
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "adminpass"
 
 USERS_FILE = "users.csv"
 
-# Create users file if it doesn't exist
+# Create users file if not exists
 if not os.path.exists(USERS_FILE):
     with open(USERS_FILE, mode='w', newline='') as file:
         writer = csv.writer(file)
@@ -23,7 +23,7 @@ def check_user(username):
     else:
         return "new"
 
-# Approve a user
+# Approve user
 def approve_user(username):
     df = pd.read_csv(USERS_FILE)
     df.loc[df['username'] == username, 'status'] = 'approved'
@@ -34,6 +34,8 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'current_user' not in st.session_state:
     st.session_state.current_user = ""
+if 'admin_logged_in' not in st.session_state:
+    st.session_state.admin_logged_in = False
 
 # App title
 st.title("📊 Financial Ratio Analyzer")
@@ -60,7 +62,7 @@ if choice == "Login":
                 writer.writerow([username, "pending"])
             st.info("First time login as Free Trial. Awaiting admin approval.")
 
-# 📊 Financial Ratio Dashboard should show when logged in
+# 📊 Financial Ratio Dashboard for logged-in users
 if st.session_state.logged_in and choice == "Login":
     st.header(f"Financial Ratio Dashboard for {st.session_state.current_user}")
 
@@ -130,17 +132,24 @@ elif choice == "Admin":
     if st.button("Login as Admin"):
         if admin_user == ADMIN_USERNAME and admin_pass == ADMIN_PASSWORD:
             st.success("Admin logged in.")
-
-            df_users = pd.read_csv(USERS_FILE)
-            pending_users = df_users[df_users['status'] == 'pending']
-
-            if not pending_users.empty:
-                for idx, row in pending_users.iterrows():
-                    st.write(f"Username: {row['username']}")
-                    if st.button(f"Approve {row['username']}", key=row['username']):
-                        approve_user(row['username'])
-                        st.success(f"{row['username']} approved.")
-            else:
-                st.info("No pending users.")
+            st.session_state.admin_logged_in = True
         else:
             st.error("Invalid admin credentials.")
+
+    if st.session_state.admin_logged_in:
+        st.subheader("Pending User Approvals")
+        df_users = pd.read_csv(USERS_FILE)
+        pending_users = df_users[df_users['status'] == 'pending']
+
+        if not pending_users.empty:
+            for idx, row in pending_users.iterrows():
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"Username: {row['username']}")
+                with col2:
+                    if st.button(f"Approve", key=row['username']):
+                        approve_user(row['username'])
+                        st.success(f"{row['username']} approved.")
+                        st.experimental_rerun()  # Refresh to update list
+        else:
+            st.info("No pending users.")
