@@ -9,7 +9,7 @@ menu = ["Home", "Admin"]
 choice = st.sidebar.selectbox("Navigation", menu)
 
 # Dummy user authentication (can be replaced with real logic)
-users = {"admin": "password123", "user": "userpass"}
+users = {"admin": "chumcred@gmail.com", "user": "CHUMCRED"}
 
 # Admin page
 if choice == "Admin":
