@@ -90,11 +90,19 @@ if choice == "Login":
                 df = pd.DataFrame(results, columns=["Ratio", "Value", "Analysis", "Implication", "Advice"])
                 st.dataframe(df)
 
-                df.to_csv("financial_ratios.csv", index=False)
+                # Save to CSV
+                csv_path = "financial_ratios.csv"
+                df.to_csv(csv_path, index=False)
                 st.success("Results saved to financial_ratios.csv")
 
-                with open("financial_ratios.csv", "rb") as file:
-                    st.download_button("Download CSV", file, file_name="financial_ratios.csv")
+                # CSV download button
+                with open(csv_path, "rb") as file:
+                    st.download_button(
+                        label="📥 Download Result CSV",
+                        data=file,
+                        file_name="financial_ratios.csv",
+                        mime="text/csv"
+                    )
 
         elif status == "pending":
             st.warning("Your account is awaiting admin approval.")
